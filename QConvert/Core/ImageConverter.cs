@@ -1,4 +1,5 @@
 using System.IO;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -13,16 +14,79 @@ namespace QConvert.Core
         public static string Convert(string inputPath, ConversionTarget target, int jpegQuality = AppSettings.DefaultJpegQuality)
         {
             var fullPath = Path.GetFullPath(inputPath);
+            var image = LoadOriented(fullPath);
+            var outputPath = OutputPathResolver.GetUniquePath(fullPath, target.FileExtension());
+            return Encode(image, outputPath, target, jpegQuality);
+        }
 
-            BitmapFrame frame;
-            using (var input = File.OpenRead(fullPath))
+        /// <summary>
+        /// Scales the image (preserving aspect ratio, never upscaling) so it fits
+        /// inside the box and writes the copy next to the source file.
+        /// </summary>
+        public static string ResizeToFit(string inputPath, PixelSize box, int jpegQuality = AppSettings.DefaultJpegQuality)
+        {
+            var fullPath = Path.GetFullPath(inputPath);
+            var image = LoadOriented(fullPath);
+
+            var size = ResizeMath.Fit(new PixelSize(image.PixelWidth, image.PixelHeight), box);
+            if (size.Width != image.PixelWidth || size.Height != image.PixelHeight)
             {
-                var decoder = BitmapDecoder.Create(input, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
-                frame = decoder.Frames[0];
+                image = Scale(image, size);
             }
 
-            BitmapSource source = ApplyExifOrientation(frame);
+            return SaveSibling(fullPath, image, jpegQuality);
+        }
 
+        /// <summary>
+        /// Scales the image (up or down) to cover the box, then center-crops to
+        /// exactly the box size.
+        /// </summary>
+        public static string CropToSize(string inputPath, PixelSize box, int jpegQuality = AppSettings.DefaultJpegQuality)
+        {
+            var fullPath = Path.GetFullPath(inputPath);
+            var image = LoadOriented(fullPath);
+
+            var plan = ResizeMath.Cover(new PixelSize(image.PixelWidth, image.PixelHeight), box);
+            image = Crop(Scale(image, plan.Scaled), plan.Crop);
+
+            return SaveSibling(fullPath, image, jpegQuality);
+        }
+
+        /// <summary>
+        /// Center-crops the image to the given aspect ratio without resizing.
+        /// </summary>
+        public static string CropToAspect(string inputPath, int ratioX, int ratioY, int jpegQuality = AppSettings.DefaultJpegQuality)
+        {
+            var fullPath = Path.GetFullPath(inputPath);
+            var image = LoadOriented(fullPath);
+
+            var rect = ResizeMath.AspectCrop(new PixelSize(image.PixelWidth, image.PixelHeight), ratioX, ratioY);
+            if (rect.Width != image.PixelWidth || rect.Height != image.PixelHeight)
+            {
+                image = Crop(image, rect);
+            }
+
+            return SaveSibling(fullPath, image, jpegQuality);
+        }
+
+        /// <summary>
+        /// Output format for size operations: JPEG sources stay JPEG, everything
+        /// else becomes PNG (WIC has no WebP encoder).
+        /// </summary>
+        public static ConversionTarget TargetForSource(string extension) =>
+            extension.ToLowerInvariant() is ".jpg" or ".jpeg" ? ConversionTarget.Jpeg : ConversionTarget.Png;
+
+        private static string SaveSibling(string fullPath, BitmapSource image, int jpegQuality)
+        {
+            var target = TargetForSource(Path.GetExtension(fullPath));
+            var outputPath = OutputPathResolver.GetUniquePath(
+                fullPath,
+                $".{image.PixelWidth}x{image.PixelHeight}{target.FileExtension()}");
+            return Encode(image, outputPath, target, jpegQuality);
+        }
+
+        private static string Encode(BitmapSource image, string outputPath, ConversionTarget target, int jpegQuality)
+        {
             BitmapEncoder encoder;
             switch (target)
             {
@@ -30,7 +94,7 @@ namespace QConvert.Core
                     encoder = new JpegBitmapEncoder { QualityLevel = Math.Clamp(jpegQuality, AppSettings.MinJpegQuality, AppSettings.MaxJpegQuality) };
                     // JPEG has no alpha channel; composite transparent pixels onto white
                     // instead of letting the encoder turn them black.
-                    source = FlattenToWhite(source);
+                    image = FlattenToWhite(image);
                     break;
                 case ConversionTarget.Png:
                     encoder = new PngBitmapEncoder();
@@ -39,15 +103,47 @@ namespace QConvert.Core
                     throw new ArgumentOutOfRangeException(nameof(target), target, null);
             }
 
-            encoder.Frames.Add(BitmapFrame.Create(source));
-
-            var outputPath = OutputPathResolver.GetUniquePath(fullPath, target.FileExtension());
+            encoder.Frames.Add(BitmapFrame.Create(image));
             using (var output = new FileStream(outputPath, FileMode.CreateNew))
             {
                 encoder.Save(output);
             }
 
             return outputPath;
+        }
+
+        private static BitmapSource LoadOriented(string fullPath)
+        {
+            BitmapFrame frame;
+            using (var input = File.OpenRead(fullPath))
+            {
+                var decoder = BitmapDecoder.Create(input, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
+                frame = decoder.Frames[0];
+            }
+
+            return ApplyExifOrientation(frame);
+        }
+
+        private static BitmapSource Scale(BitmapSource source, PixelSize size)
+        {
+            var scaled = new TransformedBitmap(source, new ScaleTransform(
+                size.Width / (double)source.PixelWidth,
+                size.Height / (double)source.PixelHeight));
+            scaled.Freeze();
+            return scaled;
+        }
+
+        private static BitmapSource Crop(BitmapSource source, PixelRect rect)
+        {
+            // Guard against rounding drift from scaling.
+            var x = Math.Clamp(rect.X, 0, Math.Max(0, source.PixelWidth - 1));
+            var y = Math.Clamp(rect.Y, 0, Math.Max(0, source.PixelHeight - 1));
+            var width = Math.Min(rect.Width, source.PixelWidth - x);
+            var height = Math.Min(rect.Height, source.PixelHeight - y);
+
+            var cropped = new CroppedBitmap(source, new Int32Rect(x, y, width, height));
+            cropped.Freeze();
+            return cropped;
         }
 
         private static BitmapSource ApplyExifOrientation(BitmapFrame frame)
@@ -68,25 +164,20 @@ namespace QConvert.Core
                 // No EXIF block or container without metadata support.
             }
 
-            var rotation = orientation switch
+            var angle = orientation switch
             {
-                3 => Rotation.Rotate180,
-                6 => Rotation.Rotate90,
-                8 => Rotation.Rotate270,
-                _ => Rotation.Rotate0,
+                3 => 180,
+                6 => 90,
+                8 => 270,
+                _ => 0,
             };
 
-            if (rotation == Rotation.Rotate0)
+            if (angle == 0)
             {
                 return frame;
             }
 
-            var transformed = new TransformedBitmap(frame, rotation switch
-            {
-                Rotation.Rotate90 => new RotateTransform(90),
-                Rotation.Rotate180 => new RotateTransform(180),
-                _ => new RotateTransform(270),
-            });
+            var transformed = new TransformedBitmap(frame, new RotateTransform(angle));
             transformed.Freeze();
             return transformed;
         }

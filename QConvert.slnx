@@ -1,0 +1,9 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="QConvert.Tests/QConvert.Tests.csproj" />
+  <Project Path="QConvert/QConvert.csproj" />
+</Solution>

@@ -26,40 +26,22 @@ namespace QConvert
 
         private static int RunConversion(string[] args)
         {
-            ConversionTarget? target = null;
-            var files = new List<string>();
-
-            for (var i = 0; i < args.Length; i++)
+            var command = CommandLine.Parse(args);
+            if (command.Error is not null)
             {
-                if (args[i] == "--to" && i + 1 < args.Length)
-                {
-                    target = ConversionTargetExtensions.Parse(args[++i]);
-                    if (target is null)
-                    {
-                        ShowError($"Unknown target format '{args[i]}'. Supported: jpg, png.");
-                        return 2;
-                    }
-                }
-                else
-                {
-                    files.Add(args[i]);
-                }
-            }
-
-            if (target is null || files.Count == 0)
-            {
-                ShowError("Usage: QConvert.exe --to <jpg|png> <file> [<file> ...]");
+                ShowError(command.Error);
                 return 2;
             }
 
             var settings = AppSettings.Load();
+            var jpegQuality = command.JpegQuality ?? settings.JpegQuality;
             var errors = new List<string>();
 
-            foreach (var file in files)
+            foreach (var file in command.Files)
             {
                 try
                 {
-                    Core.ImageConverter.Convert(file, target.Value, settings.JpegQuality);
+                    Execute(command.Operation!, file, jpegQuality);
                 }
                 catch (NotSupportedException)
                 {
@@ -78,6 +60,27 @@ namespace QConvert
             }
 
             return 0;
+        }
+
+        private static void Execute(Operation operation, string file, int jpegQuality)
+        {
+            switch (operation)
+            {
+                case ConvertOperation convert:
+                    Core.ImageConverter.Convert(file, convert.Target, jpegQuality);
+                    break;
+                case FitOperation fit:
+                    Core.ImageConverter.ResizeToFit(file, fit.Box, jpegQuality);
+                    break;
+                case CoverOperation cover:
+                    Core.ImageConverter.CropToSize(file, cover.Box, jpegQuality);
+                    break;
+                case AspectCropOperation crop:
+                    Core.ImageConverter.CropToAspect(file, crop.RatioX, crop.RatioY, jpegQuality);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(operation), operation, null);
+            }
         }
 
         private static void ShowError(string message) =>

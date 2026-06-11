@@ -2,6 +2,11 @@
 <!--
   Per-user MSI (no elevation). Build with:
     wix build installer/Package.wxs -arch x64 -d Version=1.0.0 -d PublishDir=publish -o QConvert.msi
+
+  Installs a default "QConvert" cascading context menu containing the format
+  conversions. The app rebuilds the menu (adding resize/crop entries) whenever
+  settings are saved, so the menu keys are removed wholesale on uninstall via
+  RemoveRegistryKey to also clean up user additions.
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Package Name="QConvert"
@@ -39,55 +44,77 @@
         <RemoveFolder Id="CleanupShortcut" Directory="ProgramMenuFolder" On="uninstall" />
       </Component>
 
-      <!-- Explorer context-menu verbs. Must match QConvert.Core.ShellIntegration. -->
-      <Component Id="VerbPngToJpg">
-        <RegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.png\shell\QConvert.ToJpg">
-          <RegistryValue Type="string" Value="Convert to JPG" KeyPath="yes" />
+      <!-- Default cascading menus. Must match QConvert.Core.ShellIntegration. -->
+
+      <Component Id="MenuPng">
+        <RegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.png\shell\QConvert">
+          <RegistryValue Name="MUIVerb" Type="string" Value="QConvert" KeyPath="yes" />
           <RegistryValue Name="Icon" Type="string" Value="[INSTALLFOLDER]QConvert.exe" />
-          <RegistryKey Key="command">
-            <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]QConvert.exe&quot; --to jpg &quot;%1&quot;" />
+          <RegistryValue Name="SubCommands" Type="string" Value="" />
+          <RegistryKey Key="shell\00">
+            <RegistryValue Name="MUIVerb" Type="string" Value="Convert to JPG" />
+            <RegistryKey Key="command">
+              <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]QConvert.exe&quot; --to jpg &quot;%1&quot;" />
+            </RegistryKey>
           </RegistryKey>
         </RegistryKey>
+        <RemoveRegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.png\shell\QConvert" Action="removeOnUninstall" />
+        <RemoveRegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.png\shell\QConvert.ToJpg" Action="removeOnInstall" />
       </Component>
 
-      <Component Id="VerbWebpToJpg">
-        <RegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.webp\shell\QConvert.ToJpg">
-          <RegistryValue Type="string" Value="Convert to JPG" KeyPath="yes" />
+      <Component Id="MenuJpg">
+        <RegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.jpg\shell\QConvert">
+          <RegistryValue Name="MUIVerb" Type="string" Value="QConvert" KeyPath="yes" />
           <RegistryValue Name="Icon" Type="string" Value="[INSTALLFOLDER]QConvert.exe" />
-          <RegistryKey Key="command">
-            <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]QConvert.exe&quot; --to jpg &quot;%1&quot;" />
+          <RegistryValue Name="SubCommands" Type="string" Value="" />
+          <RegistryKey Key="shell\00">
+            <RegistryValue Name="MUIVerb" Type="string" Value="Convert to PNG" />
+            <RegistryKey Key="command">
+              <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]QConvert.exe&quot; --to png &quot;%1&quot;" />
+            </RegistryKey>
           </RegistryKey>
         </RegistryKey>
+        <RemoveRegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.jpg\shell\QConvert" Action="removeOnUninstall" />
+        <RemoveRegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.jpg\shell\QConvert.ToPng" Action="removeOnInstall" />
       </Component>
 
-      <Component Id="VerbWebpToPng">
-        <RegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.webp\shell\QConvert.ToPng">
-          <RegistryValue Type="string" Value="Convert to PNG" KeyPath="yes" />
+      <Component Id="MenuJpeg">
+        <RegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.jpeg\shell\QConvert">
+          <RegistryValue Name="MUIVerb" Type="string" Value="QConvert" KeyPath="yes" />
           <RegistryValue Name="Icon" Type="string" Value="[INSTALLFOLDER]QConvert.exe" />
-          <RegistryKey Key="command">
-            <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]QConvert.exe&quot; --to png &quot;%1&quot;" />
+          <RegistryValue Name="SubCommands" Type="string" Value="" />
+          <RegistryKey Key="shell\00">
+            <RegistryValue Name="MUIVerb" Type="string" Value="Convert to PNG" />
+            <RegistryKey Key="command">
+              <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]QConvert.exe&quot; --to png &quot;%1&quot;" />
+            </RegistryKey>
           </RegistryKey>
         </RegistryKey>
+        <RemoveRegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.jpeg\shell\QConvert" Action="removeOnUninstall" />
+        <RemoveRegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.jpeg\shell\QConvert.ToPng" Action="removeOnInstall" />
       </Component>
 
-      <Component Id="VerbJpgToPng">
-        <RegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.jpg\shell\QConvert.ToPng">
-          <RegistryValue Type="string" Value="Convert to PNG" KeyPath="yes" />
+      <Component Id="MenuWebp">
+        <RegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.webp\shell\QConvert">
+          <RegistryValue Name="MUIVerb" Type="string" Value="QConvert" KeyPath="yes" />
           <RegistryValue Name="Icon" Type="string" Value="[INSTALLFOLDER]QConvert.exe" />
-          <RegistryKey Key="command">
-            <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]QConvert.exe&quot; --to png &quot;%1&quot;" />
+          <RegistryValue Name="SubCommands" Type="string" Value="" />
+          <RegistryKey Key="shell\00">
+            <RegistryValue Name="MUIVerb" Type="string" Value="Convert to JPG" />
+            <RegistryKey Key="command">
+              <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]QConvert.exe&quot; --to jpg &quot;%1&quot;" />
+            </RegistryKey>
+          </RegistryKey>
+          <RegistryKey Key="shell\01">
+            <RegistryValue Name="MUIVerb" Type="string" Value="Convert to PNG" />
+            <RegistryKey Key="command">
+              <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]QConvert.exe&quot; --to png &quot;%1&quot;" />
+            </RegistryKey>
           </RegistryKey>
         </RegistryKey>
-      </Component>
-
-      <Component Id="VerbJpegToPng">
-        <RegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.jpeg\shell\QConvert.ToPng">
-          <RegistryValue Type="string" Value="Convert to PNG" KeyPath="yes" />
-          <RegistryValue Name="Icon" Type="string" Value="[INSTALLFOLDER]QConvert.exe" />
-          <RegistryKey Key="command">
-            <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]QConvert.exe&quot; --to png &quot;%1&quot;" />
-          </RegistryKey>
-        </RegistryKey>
+        <RemoveRegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.webp\shell\QConvert" Action="removeOnUninstall" />
+        <RemoveRegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.webp\shell\QConvert.ToJpg" Action="removeOnInstall" />
+        <RemoveRegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.webp\shell\QConvert.ToPng" Action="removeOnInstall" />
       </Component>
 
     </ComponentGroup>

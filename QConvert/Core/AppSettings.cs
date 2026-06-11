@@ -3,6 +3,10 @@ using System.Text.Json;
 
 namespace QConvert.Core
 {
+    public sealed record SizeSetting(int Width, int Height);
+
+    public sealed record AspectRatioSetting(int X, int Y);
+
     public sealed class AppSettings
     {
         public const int MinJpegQuality = 1;
@@ -10,6 +14,15 @@ namespace QConvert.Core
         public const int DefaultJpegQuality = 90;
 
         public int JpegQuality { get; set; } = DefaultJpegQuality;
+
+        /// <summary>Boxes for "Resize to fit" context-menu entries.</summary>
+        public List<SizeSetting> FitSizes { get; set; } = new();
+
+        /// <summary>Exact sizes for "Crop to size" (scale to cover, then crop) entries.</summary>
+        public List<SizeSetting> CoverSizes { get; set; } = new();
+
+        /// <summary>Ratios for "Crop to aspect" (crop only, no resize) entries.</summary>
+        public List<AspectRatioSetting> AspectRatios { get; set; } = new();
 
         public static string DefaultPath => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -29,7 +42,7 @@ namespace QConvert.Core
                     var settings = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(path));
                     if (settings is not null)
                     {
-                        settings.Clamp();
+                        settings.Sanitize();
                         return settings;
                     }
                 }
@@ -45,14 +58,17 @@ namespace QConvert.Core
         public void Save(string? path = null)
         {
             path ??= DefaultPath;
-            Clamp();
+            Sanitize();
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             File.WriteAllText(path, JsonSerializer.Serialize(this, SerializerOptions));
         }
 
-        private void Clamp()
+        private void Sanitize()
         {
             JpegQuality = Math.Clamp(JpegQuality, MinJpegQuality, MaxJpegQuality);
+            FitSizes = FitSizes.Where(s => s is { Width: > 0, Height: > 0 }).Distinct().ToList();
+            CoverSizes = CoverSizes.Where(s => s is { Width: > 0, Height: > 0 }).Distinct().ToList();
+            AspectRatios = AspectRatios.Where(r => r is { X: > 0, Y: > 0 }).Distinct().ToList();
         }
     }
 }

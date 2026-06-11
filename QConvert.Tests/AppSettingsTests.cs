@@ -59,6 +59,45 @@ namespace QConvert.Tests
         }
 
         [Fact]
+        public void SaveAndLoad_RoundTripsResizeSelections()
+        {
+            var settings = new AppSettings
+            {
+                FitSizes = { new SizeSetting(1920, 1080) },
+                CoverSizes = { new SizeSetting(1200, 630), new SizeSetting(3840, 2160) },
+                AspectRatios = { new AspectRatioSetting(4, 3), new AspectRatioSetting(16, 9) },
+            };
+            settings.Save(_path);
+
+            var loaded = AppSettings.Load(_path);
+
+            Assert.Equal(settings.FitSizes, loaded.FitSizes);
+            Assert.Equal(settings.CoverSizes, loaded.CoverSizes);
+            Assert.Equal(settings.AspectRatios, loaded.AspectRatios);
+        }
+
+        [Fact]
+        public void Load_DropsInvalidAndDuplicateEntries()
+        {
+            File.WriteAllText(_path, """
+                {
+                  "FitSizes": [
+                    {"Width": 1920, "Height": 1080},
+                    {"Width": 1920, "Height": 1080},
+                    {"Width": 0, "Height": 100},
+                    {"Width": -5, "Height": 100}
+                  ],
+                  "AspectRatios": [{"X": 4, "Y": 0}]
+                }
+                """);
+
+            var settings = AppSettings.Load(_path);
+
+            Assert.Equal(new[] { new SizeSetting(1920, 1080) }, settings.FitSizes);
+            Assert.Empty(settings.AspectRatios);
+        }
+
+        [Fact]
         public void Save_CreatesMissingDirectory()
         {
             var nested = Path.Combine(_dir, "sub", "settings.json");
