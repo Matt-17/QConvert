@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Per-user MSI (no elevation). Build with:
+    wix build installer/Package.wxs -arch x64 -d Version=1.0.0 -d PublishDir=publish -o QConvert.msi
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="QConvert"
+           Manufacturer="Code-iX"
+           Version="$(var.Version)"
+           UpgradeCode="28923087-5FFA-411F-8CFB-F34BE572BB8D"
+           Language="1033"
+           Scope="perUser">
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of QConvert is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="ProgramsFolder" Name="Programs">
+        <Directory Id="INSTALLFOLDER" Name="QConvert" />
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder" />
+
+    <ComponentGroup Id="AppComponents" Directory="INSTALLFOLDER">
+
+      <Component Id="MainExecutable" Guid="F921628F-64D1-42EB-BD7D-3BE8710B04E6">
+        <File Id="QConvertExe" Source="$(var.PublishDir)\QConvert.exe" />
+        <!-- Per-user components under the user profile need an HKCU registry key path. -->
+        <RegistryValue Root="HKCU" Key="Software\Code-iX\QConvert" Name="InstallFolder"
+                       Type="string" Value="[INSTALLFOLDER]" KeyPath="yes" />
+      </Component>
+
+      <Component Id="StartMenuShortcut" Guid="1FA753D2-A069-4979-A0E7-FFD8DD60AD8B">
+        <Shortcut Id="SettingsShortcut" Directory="ProgramMenuFolder" Name="QConvert"
+                  Description="QConvert settings" Target="[INSTALLFOLDER]QConvert.exe" />
+        <RegistryValue Root="HKCU" Key="Software\Code-iX\QConvert" Name="StartMenuShortcut"
+                       Type="integer" Value="1" KeyPath="yes" />
+        <RemoveFolder Id="CleanupShortcut" Directory="ProgramMenuFolder" On="uninstall" />
+      </Component>
+
+      <!-- Explorer context-menu verbs. Must match QConvert.Core.ShellIntegration. -->
+      <Component Id="VerbPngToJpg">
+        <RegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.png\shell\QConvert.ToJpg">
+          <RegistryValue Type="string" Value="Convert to JPG" KeyPath="yes" />
+          <RegistryValue Name="Icon" Type="string" Value="[INSTALLFOLDER]QConvert.exe" />
+          <RegistryKey Key="command">
+            <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]QConvert.exe&quot; --to jpg &quot;%1&quot;" />
+          </RegistryKey>
+        </RegistryKey>
+      </Component>
+
+      <Component Id="VerbWebpToJpg">
+        <RegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.webp\shell\QConvert.ToJpg">
+          <RegistryValue Type="string" Value="Convert to JPG" KeyPath="yes" />
+          <RegistryValue Name="Icon" Type="string" Value="[INSTALLFOLDER]QConvert.exe" />
+          <RegistryKey Key="command">
+            <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]QConvert.exe&quot; --to jpg &quot;%1&quot;" />
+          </RegistryKey>
+        </RegistryKey>
+      </Component>
+
+      <Component Id="VerbWebpToPng">
+        <RegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.webp\shell\QConvert.ToPng">
+          <RegistryValue Type="string" Value="Convert to PNG" KeyPath="yes" />
+          <RegistryValue Name="Icon" Type="string" Value="[INSTALLFOLDER]QConvert.exe" />
+          <RegistryKey Key="command">
+            <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]QConvert.exe&quot; --to png &quot;%1&quot;" />
+          </RegistryKey>
+        </RegistryKey>
+      </Component>
+
+      <Component Id="VerbJpgToPng">
+        <RegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.jpg\shell\QConvert.ToPng">
+          <RegistryValue Type="string" Value="Convert to PNG" KeyPath="yes" />
+          <RegistryValue Name="Icon" Type="string" Value="[INSTALLFOLDER]QConvert.exe" />
+          <RegistryKey Key="command">
+            <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]QConvert.exe&quot; --to png &quot;%1&quot;" />
+          </RegistryKey>
+        </RegistryKey>
+      </Component>
+
+      <Component Id="VerbJpegToPng">
+        <RegistryKey Root="HKCU" Key="Software\Classes\SystemFileAssociations\.jpeg\shell\QConvert.ToPng">
+          <RegistryValue Type="string" Value="Convert to PNG" KeyPath="yes" />
+          <RegistryValue Name="Icon" Type="string" Value="[INSTALLFOLDER]QConvert.exe" />
+          <RegistryKey Key="command">
+            <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]QConvert.exe&quot; --to png &quot;%1&quot;" />
+          </RegistryKey>
+        </RegistryKey>
+      </Component>
+
+    </ComponentGroup>
+
+    <Feature Id="Main">
+      <ComponentGroupRef Id="AppComponents" />
+    </Feature>
+
+  </Package>
+</Wix>

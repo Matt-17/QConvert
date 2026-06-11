@@ -1,0 +1,13 @@
+# Build output
+bin/
+obj/
+publish/
+*.msi
+*.wixpdb
+
+# IDE
+.vs/
+*.user
+
+# Test results
+TestResults/

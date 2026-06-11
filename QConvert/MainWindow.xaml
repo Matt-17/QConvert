@@ -1,0 +1,38 @@
+<Window x:Class="QConvert.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="QConvert"
+        SizeToContent="Height"
+        Width="420"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen">
+    <StackPanel Margin="20">
+        <TextBlock Text="JPEG quality" FontWeight="SemiBold"/>
+        <DockPanel Margin="0,6,0,0">
+            <TextBlock DockPanel.Dock="Right"
+                       Width="34"
+                       TextAlignment="Right"
+                       VerticalAlignment="Center"
+                       Text="{Binding ElementName=QualitySlider, Path=Value, StringFormat={}{0:0}}"/>
+            <Slider x:Name="QualitySlider"
+                    Minimum="1" Maximum="100"
+                    TickFrequency="1" IsSnapToTickEnabled="True"
+                    VerticalAlignment="Center"
+                    ValueChanged="QualitySlider_ValueChanged"/>
+        </DockPanel>
+        <TextBlock Text="Used when converting PNG or WebP files to JPG. Saved automatically."
+                   Foreground="Gray" TextWrapping="Wrap" Margin="0,4,0,0"/>
+
+        <Separator Margin="0,16"/>
+
+        <TextBlock Text="Explorer context menu" FontWeight="SemiBold"/>
+        <TextBlock Foreground="Gray" TextWrapping="Wrap" Margin="0,4,0,0"
+                   Text="Adds 'Convert to JPG' to PNG and WebP files and 'Convert to PNG' to JPG and WebP files. The converted copy is created next to the original."/>
+        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+            <Button x:Name="RegisterButton" Content="Add to context menu" Padding="12,5" Click="Register_Click"/>
+            <Button x:Name="UnregisterButton" Content="Remove from context menu" Padding="12,5" Margin="8,0,0,0" Click="Unregister_Click"/>
+        </StackPanel>
+
+        <TextBlock x:Name="StatusText" Foreground="Gray" Margin="0,14,0,0" TextWrapping="Wrap"/>
+    </StackPanel>
+</Window>
