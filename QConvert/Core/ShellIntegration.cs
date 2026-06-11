@@ -15,7 +15,7 @@ namespace QConvert.Core
         // ECF_SEPARATORBEFORE: draws a separator above the entry in cascade menus.
         private const int SeparatorBefore = 0x20;
 
-        private static readonly string[] Extensions = { ".png", ".jpg", ".jpeg", ".webp" };
+        private static readonly string[] Extensions = { ".png", ".jpg", ".jpeg", ".webp", ".ico" };
 
         public static void Register(string exePath, AppSettings settings)
         {
@@ -34,8 +34,8 @@ namespace QConvert.Core
                 foreach (var target in ConversionsFor(extension))
                 {
                     AddEntry(shell, ref index, exePath,
-                        target == ConversionTarget.Jpeg ? "Convert to JPG" : "Convert to PNG",
-                        $"--to {(target == ConversionTarget.Jpeg ? "jpg" : "png")}",
+                        $"Convert to {target.DisplayName()}",
+                        $"--to {target.CliValue()}",
                         separatorBefore: false);
                 }
 
@@ -90,6 +90,7 @@ namespace QConvert.Core
             // Flat verbs written by versions before the cascading menu.
             Registry.CurrentUser.DeleteSubKeyTree($@"{BaseKey}\{extension}\shell\QConvert.ToJpg", throwOnMissingSubKey: false);
             Registry.CurrentUser.DeleteSubKeyTree($@"{BaseKey}\{extension}\shell\QConvert.ToPng", throwOnMissingSubKey: false);
+            Registry.CurrentUser.DeleteSubKeyTree($@"{BaseKey}\{extension}\shell\QConvert.ToIco", throwOnMissingSubKey: false);
         }
 
         private static void AddEntry(RegistryKey shell, ref int index, string exePath, string label, string arguments, bool separatorBefore)
@@ -108,9 +109,10 @@ namespace QConvert.Core
 
         private static IEnumerable<ConversionTarget> ConversionsFor(string extension) => extension switch
         {
-            ".png" => new[] { ConversionTarget.Jpeg },
-            ".webp" => new[] { ConversionTarget.Jpeg, ConversionTarget.Png },
-            _ => new[] { ConversionTarget.Png },
+            ".png" => new[] { ConversionTarget.Jpeg, ConversionTarget.Ico },
+            ".webp" => new[] { ConversionTarget.Jpeg, ConversionTarget.Png, ConversionTarget.Ico },
+            ".ico" => new[] { ConversionTarget.Png },
+            _ => new[] { ConversionTarget.Png, ConversionTarget.Ico },
         };
 
         private static string MenuKeyPath(string extension) =>

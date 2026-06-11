@@ -107,7 +107,7 @@
                     <StackPanel>
                         <TextBlock Style="{StaticResource SectionTitle}" Text="Context menu"/>
                         <TextBlock Style="{StaticResource Hint}"
-                                   Text="Right-clicking a PNG, JPG or WebP file shows a 'QConvert' submenu with the format conversions and the entries selected above. Saving rebuilds the menu. Converted copies keep the original name; existing names get a numeric suffix (photo.001.jpg). On Windows 11 the menu appears under 'Show more options'."/>
+                                   Text="Right-clicking a PNG, JPG, WebP or ICO file shows a 'QConvert' submenu with the format conversions and the entries selected above. ICO output includes 16x16, 32x32, 48x48, 64x64 and 128x128 images. Saving rebuilds the menu. Converted copies keep the original name; existing names get a numeric suffix (photo.001.jpg). On Windows 11 the menu appears under 'Show more options'."/>
                     </StackPanel>
                 </Border>
 

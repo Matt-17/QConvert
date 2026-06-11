@@ -7,6 +7,8 @@ namespace QConvert.Core
 {
     public static class ImageConverter
     {
+        private static readonly int[] IconSizes = { 16, 32, 48, 64, 128 };
+
         /// <summary>
         /// Converts an image file to the target format and writes it next to the
         /// source file. Returns the path of the created file.
@@ -99,6 +101,9 @@ namespace QConvert.Core
                 case ConversionTarget.Png:
                     encoder = new PngBitmapEncoder();
                     break;
+                case ConversionTarget.Ico:
+                    WriteIcon(image, outputPath);
+                    return outputPath;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(target), target, null);
             }
@@ -111,6 +116,226 @@ namespace QConvert.Core
 
             return outputPath;
         }
+
+        private static void WriteIcon(BitmapSource source, string outputPath)
+        {
+            var images = IconSizes
+                .Select(size => new IconImage(size, EncodePng(CreateIconFrame(source, size))))
+                .ToList();
+
+            using var output = new FileStream(outputPath, FileMode.CreateNew);
+            using var writer = new BinaryWriter(output);
+
+            writer.Write((ushort)0); // Reserved.
+            writer.Write((ushort)1); // Icon resource.
+            writer.Write((ushort)images.Count);
+
+            var offset = 6 + images.Count * 16;
+            foreach (var image in images)
+            {
+                writer.Write((byte)image.Size);
+                writer.Write((byte)image.Size);
+                writer.Write((byte)0); // Color count.
+                writer.Write((byte)0); // Reserved.
+                writer.Write((ushort)1); // Color planes.
+                writer.Write((ushort)32); // Bits per pixel.
+                writer.Write(image.Data.Length);
+                writer.Write(offset);
+                offset += image.Data.Length;
+            }
+
+            foreach (var image in images)
+            {
+                writer.Write(image.Data);
+            }
+        }
+
+        private static byte[] EncodePng(BitmapSource image)
+        {
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(image));
+
+            using var stream = new MemoryStream();
+            encoder.Save(stream);
+            return stream.ToArray();
+        }
+
+        private static BitmapSource CreateIconFrame(BitmapSource source, int size)
+        {
+            var scale = Math.Min(size / (double)source.PixelWidth, size / (double)source.PixelHeight);
+            var fitted = new PixelSize(
+                Math.Max(1, (int)Math.Round(source.PixelWidth * scale)),
+                Math.Max(1, (int)Math.Round(source.PixelHeight * scale)));
+            var scaled = ScaleWithAlpha(source, fitted);
+
+            int outputStride = size * 4;
+            var output = new byte[outputStride * size];
+            int inputStride = scaled.PixelWidth * 4;
+            var input = new byte[inputStride * scaled.PixelHeight];
+            scaled.CopyPixels(input, inputStride, 0);
+
+            var offsetX = (size - scaled.PixelWidth) / 2;
+            var offsetY = (size - scaled.PixelHeight) / 2;
+            for (var y = 0; y < scaled.PixelHeight; y++)
+            {
+                Buffer.BlockCopy(
+                    input,
+                    y * inputStride,
+                    output,
+                    (y + offsetY) * outputStride + offsetX * 4,
+                    inputStride);
+            }
+
+            var frame = BitmapSource.Create(size, size, 96, 96, PixelFormats.Bgra32, null, output, outputStride);
+            frame.Freeze();
+            return frame;
+        }
+
+        private static BitmapSource ScaleWithAlpha(BitmapSource source, PixelSize size)
+        {
+            var bgra = new FormatConvertedBitmap(source, PixelFormats.Bgra32, null, 0);
+            int inputStride = bgra.PixelWidth * 4;
+            var input = new byte[inputStride * bgra.PixelHeight];
+            bgra.CopyPixels(input, inputStride, 0);
+
+            int outputStride = size.Width * 4;
+            var output = new byte[outputStride * size.Height];
+
+            if (size.Width <= bgra.PixelWidth && size.Height <= bgra.PixelHeight)
+            {
+                ScaleArea(input, bgra.PixelWidth, bgra.PixelHeight, inputStride, output, size, outputStride);
+            }
+            else
+            {
+                ScaleBilinear(input, bgra.PixelWidth, bgra.PixelHeight, inputStride, output, size, outputStride);
+            }
+
+            var scaled = BitmapSource.Create(size.Width, size.Height, 96, 96, PixelFormats.Bgra32, null, output, outputStride);
+            scaled.Freeze();
+            return scaled;
+        }
+
+        private static void ScaleArea(byte[] input, int inputWidth, int inputHeight, int inputStride, byte[] output, PixelSize size, int outputStride)
+        {
+            var scaleX = inputWidth / (double)size.Width;
+            var scaleY = inputHeight / (double)size.Height;
+            var pixelArea = scaleX * scaleY;
+
+            for (var y = 0; y < size.Height; y++)
+            {
+                var sourceTop = y * scaleY;
+                var sourceBottom = sourceTop + scaleY;
+                var firstY = Math.Max(0, (int)Math.Floor(sourceTop));
+                var lastY = Math.Min(inputHeight - 1, (int)Math.Ceiling(sourceBottom) - 1);
+
+                for (var x = 0; x < size.Width; x++)
+                {
+                    var sourceLeft = x * scaleX;
+                    var sourceRight = sourceLeft + scaleX;
+                    var firstX = Math.Max(0, (int)Math.Floor(sourceLeft));
+                    var lastX = Math.Min(inputWidth - 1, (int)Math.Ceiling(sourceRight) - 1);
+
+                    double sumAlpha = 0;
+                    double sumBlue = 0;
+                    double sumGreen = 0;
+                    double sumRed = 0;
+
+                    for (var sy = firstY; sy <= lastY; sy++)
+                    {
+                        var yWeight = Math.Min(sourceBottom, sy + 1) - Math.Max(sourceTop, sy);
+                        if (yWeight <= 0)
+                        {
+                            continue;
+                        }
+
+                        for (var sx = firstX; sx <= lastX; sx++)
+                        {
+                            var xWeight = Math.Min(sourceRight, sx + 1) - Math.Max(sourceLeft, sx);
+                            if (xWeight <= 0)
+                            {
+                                continue;
+                            }
+
+                            var weight = xWeight * yWeight;
+                            var inputIndex = sy * inputStride + sx * 4;
+                            var alpha = input[inputIndex + 3] / 255.0;
+                            var weightedAlpha = alpha * weight;
+
+                            sumAlpha += weightedAlpha;
+                            sumBlue += input[inputIndex] * weightedAlpha;
+                            sumGreen += input[inputIndex + 1] * weightedAlpha;
+                            sumRed += input[inputIndex + 2] * weightedAlpha;
+                        }
+                    }
+
+                    WriteStraightAlphaPixel(output, y * outputStride + x * 4, sumBlue, sumGreen, sumRed, sumAlpha, pixelArea);
+                }
+            }
+        }
+
+        private static void ScaleBilinear(byte[] input, int inputWidth, int inputHeight, int inputStride, byte[] output, PixelSize size, int outputStride)
+        {
+            var scaleX = inputWidth / (double)size.Width;
+            var scaleY = inputHeight / (double)size.Height;
+
+            for (var y = 0; y < size.Height; y++)
+            {
+                var sourceY = (y + 0.5) * scaleY - 0.5;
+                var y0 = Math.Clamp((int)Math.Floor(sourceY), 0, inputHeight - 1);
+                var y1 = Math.Clamp(y0 + 1, 0, inputHeight - 1);
+                var yWeight = sourceY - Math.Floor(sourceY);
+
+                for (var x = 0; x < size.Width; x++)
+                {
+                    var sourceX = (x + 0.5) * scaleX - 0.5;
+                    var x0 = Math.Clamp((int)Math.Floor(sourceX), 0, inputWidth - 1);
+                    var x1 = Math.Clamp(x0 + 1, 0, inputWidth - 1);
+                    var xWeight = sourceX - Math.Floor(sourceX);
+
+                    double sumAlpha = 0;
+                    double sumBlue = 0;
+                    double sumGreen = 0;
+                    double sumRed = 0;
+
+                    AddWeightedPixel(input, inputStride, x0, y0, (1 - xWeight) * (1 - yWeight), ref sumBlue, ref sumGreen, ref sumRed, ref sumAlpha);
+                    AddWeightedPixel(input, inputStride, x1, y0, xWeight * (1 - yWeight), ref sumBlue, ref sumGreen, ref sumRed, ref sumAlpha);
+                    AddWeightedPixel(input, inputStride, x0, y1, (1 - xWeight) * yWeight, ref sumBlue, ref sumGreen, ref sumRed, ref sumAlpha);
+                    AddWeightedPixel(input, inputStride, x1, y1, xWeight * yWeight, ref sumBlue, ref sumGreen, ref sumRed, ref sumAlpha);
+
+                    WriteStraightAlphaPixel(output, y * outputStride + x * 4, sumBlue, sumGreen, sumRed, sumAlpha, pixelArea: 1);
+                }
+            }
+        }
+
+        private static void AddWeightedPixel(byte[] input, int inputStride, int x, int y, double weight, ref double sumBlue, ref double sumGreen, ref double sumRed, ref double sumAlpha)
+        {
+            var inputIndex = y * inputStride + x * 4;
+            var alpha = input[inputIndex + 3] / 255.0;
+            var weightedAlpha = alpha * weight;
+
+            sumAlpha += weightedAlpha;
+            sumBlue += input[inputIndex] * weightedAlpha;
+            sumGreen += input[inputIndex + 1] * weightedAlpha;
+            sumRed += input[inputIndex + 2] * weightedAlpha;
+        }
+
+        private static void WriteStraightAlphaPixel(byte[] output, int index, double sumBlue, double sumGreen, double sumRed, double sumAlpha, double pixelArea)
+        {
+            if (sumAlpha <= 0)
+            {
+                return;
+            }
+
+            output[index] = ClampByte(sumBlue / sumAlpha);
+            output[index + 1] = ClampByte(sumGreen / sumAlpha);
+            output[index + 2] = ClampByte(sumRed / sumAlpha);
+            output[index + 3] = ClampByte(255 * sumAlpha / pixelArea);
+        }
+
+        private static byte ClampByte(double value) =>
+            (byte)Math.Clamp((int)Math.Round(value), 0, 255);
+
+        private sealed record IconImage(int Size, byte[] Data);
 
         private static BitmapSource LoadOriented(string fullPath)
         {

@@ -3,7 +3,7 @@ namespace QConvert.Core
     public sealed class CommandLine
     {
         public const string Usage =
-            "Usage: QConvert.exe (--to <jpg|png> | --fit <WxH> | --cover <WxH> | --crop <X:Y>) [--quality <1-100>] <file> [<file> ...]";
+            "Usage: QConvert.exe (--to <jpg|png|ico> | --fit <WxH> | --cover <WxH> | --crop <X:Y>) [--quality <1-100>] <file> [<file> ...]";
 
         private readonly List<string> _files = new();
 
@@ -26,7 +26,7 @@ namespace QConvert.Core
                             var target = ConversionTargetExtensions.Parse(format);
                             if (target is null)
                             {
-                                result.Error = $"Unknown target format '{format}'. Supported: jpg, png.";
+                                result.Error = $"Unknown target format '{format}'. Supported: jpg, png, ico.";
                             }
                             else
                             {
