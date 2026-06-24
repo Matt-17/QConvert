@@ -4,6 +4,13 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
+  <Project Path="QConvert.Cli/QConvert.Cli.csproj" />
+  <Project Path="QConvert.Core/QConvert.Core.csproj" />
   <Project Path="QConvert.Tests/QConvert.Tests.csproj" />
   <Project Path="QConvert/QConvert.csproj" />
+  <Project Path="QConvert.Installer/QConvert.Installer.wixproj" Type="b7dd6f7e-def8-4e67-b5b7-07ef123db6f0">
+    <Platform Project="x64" />
+    <!-- Excluded from solution builds; the MSI is produced by the dedicated "Build MSI" CI step. -->
+    <Build Project="false" />
+  </Project>
 </Solution>

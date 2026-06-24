@@ -1,0 +1,9 @@
+<Application xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <VisualElements
+    BackgroundColor="#2563EB"
+    ForegroundText="light"
+    ShowNameOnSquare150x150Logo="on"
+    Square150x150Logo="Assets\QConvertTile150.png"
+    Square70x70Logo="Assets\QConvertTile70.png"
+    Square44x44Logo="Assets\QConvertTile44.png" />
+</Application>

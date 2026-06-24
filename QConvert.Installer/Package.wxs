@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+    Name="QConvert"
+    Manufacturer="Code-iX"
+    Version="$(var.ProductVersion)"
+    UpgradeCode="{28923087-5FFA-411F-8CFB-F34BE572BB8D}"
+    Language="1033"
+    Scope="perUser">
+
+    <SummaryInformation Description="QConvert Installer" Manufacturer="Code-iX" />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of QConvert is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Icon Id="AppIcon.ico" SourceFile="..\QConvert\Assets\QConvert.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
+    <Property Id="ARPCOMMENTS" Value="Fast image conversion and resizing from Windows Explorer." />
+    <Property Id="ARPHELPLINK" Value="https://github.com/Code-iX/QConvert/issues" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/Code-iX/QConvert" />
+    <Property Id="DISABLEADVTSHORTCUTS" Value="1" />
+
+    <Feature Id="MainFeature" Title="QConvert" Level="1">
+      <ComponentGroupRef Id="AppComponents" />
+    </Feature>
+  </Package>
+
+  <Fragment>
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="ProgramsFolder" Name="Programs">
+        <Directory Id="INSTALLFOLDER" Name="QConvert">
+          <Directory Id="AssetsFolder" Name="Assets" />
+        </Directory>
+      </Directory>
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder" />
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="AppComponents" Directory="INSTALLFOLDER">
+      <Component Id="MainExecutable" Guid="{F921628F-64D1-42EB-BD7D-3BE8710B04E6}">
+        <File Id="QConvertExe" Source="$(var.PublishDir)\QConvert.exe" />
+        <File Id="QConvertCliExe" Source="$(var.PublishDir)\QConvert.Cli.exe" />
+        <RemoveFolder Id="RemoveProgramsFolder" Directory="ProgramsFolder" On="uninstall" />
+        <RemoveFolder Id="RemoveInstallFolder" Directory="INSTALLFOLDER" On="uninstall" />
+        <RegistryValue Root="HKCU" Key="Software\Code-iX\QConvert" Name="InstallFolder" Type="string" Value="[INSTALLFOLDER]" KeyPath="yes" />
+      </Component>
+
+      <Component Id="StartMenuShortcut" Directory="ProgramMenuFolder" Guid="{70D7A3F2-38B4-4D90-9C7E-4A85DE221712}">
+        <Shortcut
+          Id="AppShortcut"
+          Name="QConvert"
+          Description="QConvert settings"
+          Target="[INSTALLFOLDER]QConvert.exe"
+          WorkingDirectory="INSTALLFOLDER"
+          Icon="AppIcon.ico"
+          IconIndex="0" />
+        <RegistryValue Root="HKCU" Key="Software\Code-iX\QConvert" Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+
+      <Component Id="LogoAssets" Directory="AssetsFolder" Guid="{B18E7081-46F6-47F7-A210-372316C62B8A}">
+        <File Id="QConvertIconAsset" Source="..\QConvert\Assets\QConvert.ico" />
+        <File Id="QConvertTile150Asset" Source="..\QConvert\Assets\QConvertTile150.png" />
+        <File Id="QConvertTile70Asset" Source="..\QConvert\Assets\QConvertTile70.png" />
+        <File Id="QConvertTile44Asset" Source="..\QConvert\Assets\QConvertTile44.png" />
+        <RemoveFolder Id="RemoveAssetsFolder" On="uninstall" />
+        <RegistryValue Root="HKCU" Key="Software\Code-iX\QConvert" Name="LogoAssets" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+
+      <Component Id="VisualElementsManifest" Guid="{DA2D3B8D-3F0B-4411-9B9D-C3EF50EEEB23}">
+        <File Id="VisualElementsManifestFile" Source="..\QConvert\QConvert.VisualElementsManifest.xml" />
+        <RegistryValue Root="HKCU" Key="Software\Code-iX\QConvert" Name="VisualElementsManifest" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+
+      <Component Id="ContextMenuCleanup" Guid="{F204A681-61E8-4204-89BB-D552F67C97B9}">
+        <RegistryValue Root="HKCU" Key="Software\Code-iX\QConvert" Name="ContextMenuCleanup" Type="integer" Value="1" KeyPath="yes" />
+
+        <RemoveRegistryKey Id="RemovePngMenuOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.png\shell\QConvert" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveJpgMenuOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.jpg\shell\QConvert" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveJpegMenuOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.jpeg\shell\QConvert" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveWebpMenuOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.webp\shell\QConvert" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveAvifMenuOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.avif\shell\QConvert" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveIcoMenuOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.ico\shell\QConvert" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveFolderBackgroundMenuOnUninstall" Root="HKCU" Key="Software\Classes\Directory\Background\shell\QConvert" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveFolderMenuOnUninstall" Root="HKCU" Key="Software\Classes\Directory\shell\QConvert" Action="removeOnUninstall" />
+
+        <RemoveRegistryKey Id="RemovePngToJpgOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.png\shell\QConvert.ToJpg" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemovePngToPngOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.png\shell\QConvert.ToPng" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemovePngToIcoOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.png\shell\QConvert.ToIco" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveJpgToJpgOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.jpg\shell\QConvert.ToJpg" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveJpgToPngOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.jpg\shell\QConvert.ToPng" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveJpgToIcoOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.jpg\shell\QConvert.ToIco" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveJpegToJpgOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.jpeg\shell\QConvert.ToJpg" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveJpegToPngOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.jpeg\shell\QConvert.ToPng" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveJpegToIcoOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.jpeg\shell\QConvert.ToIco" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveWebpToJpgOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.webp\shell\QConvert.ToJpg" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveWebpToPngOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.webp\shell\QConvert.ToPng" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveWebpToIcoOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.webp\shell\QConvert.ToIco" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveAvifToJpgOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.avif\shell\QConvert.ToJpg" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveAvifToPngOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.avif\shell\QConvert.ToPng" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveAvifToIcoOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.avif\shell\QConvert.ToIco" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveIcoToJpgOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.ico\shell\QConvert.ToJpg" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveIcoToPngOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.ico\shell\QConvert.ToPng" Action="removeOnUninstall" />
+        <RemoveRegistryKey Id="RemoveIcoToIcoOnUninstall" Root="HKCU" Key="Software\Classes\SystemFileAssociations\.ico\shell\QConvert.ToIco" Action="removeOnUninstall" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

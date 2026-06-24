@@ -1,117 +1,638 @@
 <Window x:Class="QConvert.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:QConvert.Controls"
         Title="QConvert"
-        Width="620" Height="700"
-        MinWidth="520" MinHeight="480"
+        Icon="Assets/QConvert.ico"
+        Width="1240" Height="720"
+        MinWidth="1080" MinHeight="600"
         Background="{StaticResource WindowBrush}"
         WindowStartupLocation="CenterScreen"
-        FontFamily="Segoe UI" FontSize="13">
-    <DockPanel>
+        ResizeMode="CanResizeWithGrip"
+        FontFamily="Segoe UI" FontSize="13"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-        <Border DockPanel.Dock="Bottom"
-                Background="{StaticResource CardBrush}"
-                BorderBrush="{StaticResource CardBorderBrush}"
-                BorderThickness="0,1,0,0"
-                Padding="20,12">
-            <DockPanel>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                    <Button Style="{StaticResource FlatButton}"
-                            Content="Remove context menu"
-                            Click="Unregister_Click"/>
-                    <Button Style="{StaticResource PrimaryButton}"
-                            Content="Save &amp; update context menu"
-                            Margin="8,0,0,0"
-                            Click="Save_Click"/>
-                </StackPanel>
-                <TextBlock x:Name="StatusText"
-                           Style="{StaticResource Hint}"
-                           Margin="0,0,12,0"
-                           VerticalAlignment="Center"/>
-            </DockPanel>
+        <DockPanel Grid.Row="0" Background="{StaticResource CardBrush}">
+            <Menu>
+                <MenuItem Header="_File">
+                    <MenuItem Header="_Recreate context menu" Click="RecreateContextMenu_Click"/>
+                    <MenuItem Header="_Remove context menu" Click="Unregister_Click"/>
+                    <Separator/>
+                    <MenuItem Header="E_xit" Click="Exit_Click"/>
+                </MenuItem>
+                <MenuItem Header="_Help">
+                    <MenuItem Header="_About QConvert" Click="Info_Click"/>
+                </MenuItem>
+            </Menu>
+        </DockPanel>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="250"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="270"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Master: feature navigation -->
+            <Border Grid.Column="0"
+                    Background="{StaticResource SidebarBrush}"
+                    BorderBrush="{StaticResource CardBorderBrush}"
+                    BorderThickness="0,0,1,0">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Margin="18,16,18,6">
+                        <TextBlock Text="QConvert" FontSize="17" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextBrush}"/>
+                    </StackPanel>
+
+                    <ListBox x:Name="NavList"
+                             Style="{StaticResource NavList}"
+                             SelectionChanged="NavList_SelectionChanged"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             Padding="0,0,0,12">
+
+                        <ListBoxItem Style="{StaticResource NavHeader}" Content="SAVE"/>
+
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="PanelOutput" IsSelected="True">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource NavIcon}" Text="&#xE8B7;"/>
+                                <TextBlock Style="{StaticResource NavLabel}" Text="Output files"/>
+                            </StackPanel>
+                        </ListBoxItem>
+
+                        <ListBoxItem Style="{StaticResource NavHeader}" Content="ACTIONS"/>
+
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="PanelConvert">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource NavIcon}" Text="&#xE8AB;"/>
+                                <TextBlock Style="{StaticResource NavLabel}" Text="Convert formats"/>
+                            </StackPanel>
+                        </ListBoxItem>
+
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="PanelOptimizeCompress">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource NavIcon}" Text="&#xE896;"/>
+                                <TextBlock Style="{StaticResource NavLabel}" Text="Optimize/compress"/>
+                            </StackPanel>
+                        </ListBoxItem>
+
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="PanelRemoveMetadata">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource NavIcon}" Text="&#xE72E;"/>
+                                <TextBlock Style="{StaticResource NavLabel}" Text="Remove metadata"/>
+                            </StackPanel>
+                        </ListBoxItem>
+
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="PanelSepia">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource NavIcon}" Text="&#xE790;"/>
+                                <TextBlock Style="{StaticResource NavLabel}" Text="Sepia filters"/>
+                            </StackPanel>
+                        </ListBoxItem>
+
+                        <ListBoxItem Style="{StaticResource NavHeader}" Content="SIZE"/>
+
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="PanelFit">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource NavIcon}" Text="&#xE73F;"/>
+                                <TextBlock Style="{StaticResource NavLabel}" Text="Resize to fit"/>
+                            </StackPanel>
+                        </ListBoxItem>
+
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="PanelCover">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource NavIcon}" Text="&#xE7A8;"/>
+                                <TextBlock Style="{StaticResource NavLabel}" Text="Crop to size"/>
+                            </StackPanel>
+                        </ListBoxItem>
+
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="PanelAspect">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource NavIcon}" Text="&#xE740;"/>
+                                <TextBlock Style="{StaticResource NavLabel}" Text="Crop to aspect ratio"/>
+                            </StackPanel>
+                        </ListBoxItem>
+
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="PanelAvatar">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource NavIcon}" Text="&#xE77B;"/>
+                                <TextBlock Style="{StaticResource NavLabel}" Text="Avatar export"/>
+                            </StackPanel>
+                        </ListBoxItem>
+
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="PanelFavicon">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource NavIcon}" Text="&#xE734;"/>
+                                <TextBlock Style="{StaticResource NavLabel}" Text="Favicon bundle"/>
+                            </StackPanel>
+                        </ListBoxItem>
+
+                        <ListBoxItem Style="{StaticResource NavHeader}" Content="INTEGRATION"/>
+
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="PanelClipboard">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource NavIcon}" Text="&#xE77F;"/>
+                                <TextBlock Style="{StaticResource NavLabel}" Text="Clipboard paste"/>
+                            </StackPanel>
+                        </ListBoxItem>
+
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="PanelIntegration">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource NavIcon}" Text="&#xE71B;"/>
+                                <TextBlock Style="{StaticResource NavLabel}" Text="Explorer integration"/>
+                            </StackPanel>
+                        </ListBoxItem>
+
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="PanelDiagnostics">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource NavIcon}" Text="&#xE9D9;"/>
+                                <TextBlock Style="{StaticResource NavLabel}" Text="Diagnostics"/>
+                            </StackPanel>
+                        </ListBoxItem>
+
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <!-- Detail: settings for the selected feature -->
+            <ScrollViewer Grid.Column="1" x:Name="DetailScroll"
+                          VerticalScrollBarVisibility="Auto"
+                          Padding="24,20,24,8">
+                <Grid x:Name="DetailHost">
+
+                    <!-- Output files -->
+                    <StackPanel x:Name="PanelOutput">
+                        <TextBlock Style="{StaticResource PanelTitle}" Text="Output files"/>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitle}" Text="Output folder"/>
+                                <CheckBox x:Name="UseSubfolderBox" Margin="0,8,0,0"
+                                          Content="Save converted files into a subfolder"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                    <TextBlock VerticalAlignment="Center" Margin="0,0,8,0" Text="Subfolder name:"/>
+                                    <TextBox x:Name="SubfolderNameBox" Style="{StaticResource CustomEntryBox}"
+                                             Width="140"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitle}" Text="Encoding"/>
+
+                                <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0" Text="JPEG quality"/>
+                                <DockPanel Margin="0,4,0,0">
+                                    <TextBlock DockPanel.Dock="Right"
+                                               Width="34" TextAlignment="Right" VerticalAlignment="Center"
+                                               FontWeight="SemiBold"
+                                               Text="{Binding ElementName=QualitySlider, Path=Value, StringFormat={}{0:0}}"/>
+                                    <Slider x:Name="QualitySlider"
+                                            Minimum="1" Maximum="100"
+                                            TickFrequency="1" IsSnapToTickEnabled="True"
+                                            VerticalAlignment="Center"/>
+                                </DockPanel>
+
+                                <TextBlock Style="{StaticResource Hint}" Margin="0,10,0,0" Text="WebP quality"/>
+                                <DockPanel Margin="0,4,0,0">
+                                    <TextBlock DockPanel.Dock="Right"
+                                               Width="34" TextAlignment="Right" VerticalAlignment="Center"
+                                               FontWeight="SemiBold"
+                                               Text="{Binding ElementName=WebPQualitySlider, Path=Value, StringFormat={}{0:0}}"/>
+                                    <Slider x:Name="WebPQualitySlider"
+                                            Minimum="1" Maximum="100"
+                                            TickFrequency="1" IsSnapToTickEnabled="True"
+                                            VerticalAlignment="Center"/>
+                                </DockPanel>
+
+                                <TextBlock Style="{StaticResource Hint}" Margin="0,10,0,0" Text="AVIF quality"/>
+                                <DockPanel Margin="0,4,0,0">
+                                    <TextBlock DockPanel.Dock="Right"
+                                               Width="34" TextAlignment="Right" VerticalAlignment="Center"
+                                               FontWeight="SemiBold"
+                                               Text="{Binding ElementName=AvifQualitySlider, Path=Value, StringFormat={}{0:0}}"/>
+                                    <Slider x:Name="AvifQualitySlider"
+                                            Minimum="1" Maximum="100"
+                                            TickFrequency="1" IsSnapToTickEnabled="True"
+                                            VerticalAlignment="Center"/>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitle}" Text="JPEG background"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <TextBox x:Name="BackgroundBox" Style="{StaticResource CustomEntryBox}"
+                                             Width="90"/>
+                                    <TextBlock Style="{StaticResource Hint}" Margin="10,0,0,0"
+                                               VerticalAlignment="Center" Text="e.g. #ffffff"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitle}" Text="Output name pattern"/>
+                                <TextBlock Style="{StaticResource Hint}"
+                                           Text="Leave blank for default naming. Tokens: {name} {ext} {target} {width} {height}"/>
+                                <TextBox x:Name="OutputPatternBox" Style="{StaticResource CustomEntryBox}"
+                                         Width="220" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitle}" Text="Metadata"/>
+                                <CheckBox x:Name="PreserveMetadataBox" Margin="0,8,0,0"
+                                          Content="Keep EXIF/metadata when possible"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Convert formats -->
+                    <StackPanel x:Name="PanelConvert" Visibility="Collapsed">
+                        <TextBlock Style="{StaticResource PanelTitle}" Text="Convert formats"/>
+                        <TextBlock Style="{StaticResource PanelDescription}"
+                                   Text="Each enabled target adds a 'Convert to ...' entry to image files. A file never shows a conversion to its own format."/>
+
+                        <Border Style="{StaticResource Card}" Padding="8,4">
+                            <StackPanel>
+                                <Border Style="{StaticResource ToggleRow}">
+                                    <DockPanel>
+                                        <ToggleButton x:Name="ConvertJpgToggle" DockPanel.Dock="Right" Style="{StaticResource SwitchToggle}"/>
+                                        <TextBlock Style="{StaticResource ToggleRowLabel}" Text="Convert to JPG"/>
+                                    </DockPanel>
+                                </Border>
+                                <Border Style="{StaticResource ToggleRow}">
+                                    <DockPanel>
+                                        <ToggleButton x:Name="ConvertPngToggle" DockPanel.Dock="Right" Style="{StaticResource SwitchToggle}"/>
+                                        <TextBlock Style="{StaticResource ToggleRowLabel}" Text="Convert to PNG"/>
+                                    </DockPanel>
+                                </Border>
+                                <Border Style="{StaticResource ToggleRow}">
+                                    <DockPanel>
+                                        <ToggleButton x:Name="ConvertWebPToggle" DockPanel.Dock="Right" Style="{StaticResource SwitchToggle}"/>
+                                        <TextBlock Style="{StaticResource ToggleRowLabel}" Text="Convert to WebP"/>
+                                    </DockPanel>
+                                </Border>
+                                <Border Style="{StaticResource ToggleRow}">
+                                    <DockPanel>
+                                        <ToggleButton x:Name="ConvertAvifToggle" DockPanel.Dock="Right" Style="{StaticResource SwitchToggle}"/>
+                                        <TextBlock Style="{StaticResource ToggleRowLabel}" Text="Convert to AVIF"/>
+                                    </DockPanel>
+                                </Border>
+                                <Border Style="{StaticResource ToggleRow}" BorderThickness="0">
+                                    <DockPanel>
+                                        <ToggleButton x:Name="ConvertIcoToggle" DockPanel.Dock="Right" Style="{StaticResource SwitchToggle}"/>
+                                        <TextBlock Style="{StaticResource ToggleRowLabel}" Text="Convert to ICO"/>
+                                    </DockPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitle}" Text="ICO sizes"/>
+                                <TextBlock Style="{StaticResource Hint}"
+                                           Text="Enabled sizes are embedded in every Convert to ICO output."/>
+                                <controls:IcoSizeListControl x:Name="IcoSizesList"
+                                                             Margin="0,10,0,10"/>
+                            </StackPanel>
+                        </Border>
+
+                    </StackPanel>
+
+                    <!-- Optimize/compress -->
+                    <StackPanel x:Name="PanelOptimizeCompress" Visibility="Collapsed">
+                        <TextBlock Style="{StaticResource PanelTitle}" Text="Optimize/compress"/>
+                        <TextBlock Style="{StaticResource PanelDescription}"
+                                   Text="File-size actions for formats that benefit from a dedicated entry. JPEG compression is lossy; PNG optimization keeps pixels and transparency unchanged."/>
+
+                        <Border Style="{StaticResource Card}" Padding="8,4">
+                            <StackPanel>
+                                <Border Style="{StaticResource ToggleRow}">
+                                    <DockPanel>
+                                        <ToggleButton x:Name="CompressToggle" DockPanel.Dock="Right" Style="{StaticResource SwitchToggle}"/>
+                                        <StackPanel Margin="0,0,12,0">
+                                            <TextBlock Style="{StaticResource ToggleRowLabel}" Text="Compress JPG"/>
+                                            <TextBlock Style="{StaticResource Hint}"
+                                                       Text="Shows on JPEG files and writes photo.compressed.jpg using the JPEG quality setting."/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
+                                <Border Style="{StaticResource ToggleRow}" BorderThickness="0">
+                                    <DockPanel>
+                                        <ToggleButton x:Name="OptimizePngToggle" DockPanel.Dock="Right" Style="{StaticResource SwitchToggle}"/>
+                                        <StackPanel Margin="0,0,12,0">
+                                            <TextBlock Style="{StaticResource ToggleRowLabel}" Text="Optimize PNG"/>
+                                            <TextBlock Style="{StaticResource Hint}"
+                                                       Text="Shows on PNG files and writes an optimized copy only when it is smaller."/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                    </StackPanel>
+
+                    <!-- Remove metadata -->
+                    <StackPanel x:Name="PanelRemoveMetadata" Visibility="Collapsed">
+                        <TextBlock Style="{StaticResource PanelTitle}" Text="Remove metadata"/>
+                        <TextBlock Style="{StaticResource PanelDescription}"
+                                   Text="Writes a clean copy without EXIF, GPS, or camera information - useful before sharing photos publicly. Orientation is applied first so the cleaned file still appears upright."/>
+
+                        <Border Style="{StaticResource Card}" Padding="8,4">
+                            <Border Style="{StaticResource ToggleRow}" BorderThickness="0">
+                                <DockPanel>
+                                    <ToggleButton x:Name="RemoveMetadataToggle" DockPanel.Dock="Right" Style="{StaticResource SwitchToggle}"/>
+                                    <TextBlock Style="{StaticResource ToggleRowLabel}" Text="Show 'Remove metadata' on image files"/>
+                                </DockPanel>
+                            </Border>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Sepia filters -->
+                    <StackPanel x:Name="PanelSepia" Visibility="Collapsed">
+                        <TextBlock Style="{StaticResource PanelTitle}" Text="Sepia filters"/>
+                        <TextBlock Style="{StaticResource PanelDescription}"
+                                   Text="Adds sepia filter strengths to image file context menus. Each strength writes a new tinted copy."/>
+
+                        <Border Style="{StaticResource Card}" Padding="8,4">
+                            <StackPanel x:Name="SepiaPanel"/>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBox x:Name="SepiaCustomBox" Style="{StaticResource CustomEntryBox}"
+                                         Width="70" KeyDown="SepiaCustomBox_KeyDown"/>
+                                <Button Style="{StaticResource FlatButton}" Content="Add strength" Padding="10,4"
+                                        Margin="6,0,0,0" Click="AddSepia_Click"/>
+                                <TextBlock Style="{StaticResource Hint}" Margin="10,0,0,0"
+                                           VerticalAlignment="Center" Text="0-100"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Resize to fit -->
+                    <StackPanel x:Name="PanelFit" Visibility="Collapsed">
+                        <TextBlock Style="{StaticResource PanelTitle}" Text="Resize to fit"/>
+                        <TextBlock Style="{StaticResource PanelDescription}"
+                                   Text="Scales the image down (never up) so it fits inside the selected box, keeping its aspect ratio. Every enabled size is its own context-menu entry."/>
+
+                        <Border Style="{StaticResource Card}" Padding="8,4">
+                            <StackPanel x:Name="FitPanel"/>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBox x:Name="FitCustomBox" Style="{StaticResource CustomEntryBox}"
+                                         KeyDown="FitCustomBox_KeyDown"/>
+                                <Button Style="{StaticResource FlatButton}" Content="Add size" Padding="10,4"
+                                        Margin="6,0,0,0" Click="AddFitCustom_Click"/>
+                                <TextBlock Style="{StaticResource Hint}" Margin="10,0,0,0"
+                                           VerticalAlignment="Center" Text="e.g. 2048x1152"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Crop to size -->
+                    <StackPanel x:Name="PanelCover" Visibility="Collapsed">
+                        <TextBlock Style="{StaticResource PanelTitle}" Text="Crop to size"/>
+                        <TextBlock Style="{StaticResource PanelDescription}"
+                                   Text="Scales the image (up or down) until it covers the selected size, then crops the overlap. Every enabled size is its own context-menu entry."/>
+
+                        <Border Style="{StaticResource Card}" Padding="8,4">
+                            <StackPanel x:Name="CoverPanel"/>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBox x:Name="CoverCustomBox" Style="{StaticResource CustomEntryBox}"
+                                         KeyDown="CoverCustomBox_KeyDown"/>
+                                <Button Style="{StaticResource FlatButton}" Content="Add size" Padding="10,4"
+                                        Margin="6,0,0,0" Click="AddCoverCustom_Click"/>
+                                <TextBlock Style="{StaticResource Hint}" Margin="10,0,0,0"
+                                           VerticalAlignment="Center" Text="e.g. 1200x630"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitle}" Text="Crop position"/>
+                                <TextBlock Style="{StaticResource Hint}"
+                                           Text="Anchor used when cropping. Also applies to avatar export."/>
+                                <ComboBox x:Name="CropAnchorBox" Margin="0,8,0,0" Width="160" HorizontalAlignment="Left"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Crop to aspect ratio -->
+                    <StackPanel x:Name="PanelAspect" Visibility="Collapsed">
+                        <TextBlock Style="{StaticResource PanelTitle}" Text="Crop to aspect ratio"/>
+                        <TextBlock Style="{StaticResource PanelDescription}"
+                                   Text="Cuts away the left/right or top/bottom excess to reach the selected ratio. No resizing. Every enabled ratio is its own context-menu entry."/>
+
+                        <Border Style="{StaticResource Card}" Padding="8,4">
+                            <StackPanel x:Name="AspectPanel"/>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBox x:Name="AspectCustomBox" Style="{StaticResource CustomEntryBox}"
+                                         KeyDown="AspectCustomBox_KeyDown"/>
+                                <Button Style="{StaticResource FlatButton}" Content="Add ratio" Padding="10,4"
+                                        Margin="6,0,0,0" Click="AddAspectCustom_Click"/>
+                                <TextBlock Style="{StaticResource Hint}" Margin="10,0,0,0"
+                                           VerticalAlignment="Center" Text="e.g. 5:4"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Avatar export -->
+                    <StackPanel x:Name="PanelAvatar" Visibility="Collapsed">
+                        <TextBlock Style="{StaticResource PanelTitle}" Text="Avatar export"/>
+                        <TextBlock Style="{StaticResource PanelDescription}"
+                                   Text="One-click square avatars: the image is cropped to a square and resized. Every enabled size is its own context-menu entry."/>
+
+                        <Border Style="{StaticResource Card}" Padding="8,4">
+                            <StackPanel x:Name="AvatarSizesPanel"/>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBox x:Name="AvatarSizeCustomBox" Style="{StaticResource CustomEntryBox}"
+                                         Width="70" KeyDown="AvatarSizeCustomBox_KeyDown"/>
+                                <Button Style="{StaticResource FlatButton}" Content="Add size" Padding="10,4"
+                                        Margin="6,0,0,0" Click="AddAvatarSize_Click"/>
+                                <TextBlock Style="{StaticResource Hint}" Margin="10,0,0,0"
+                                           VerticalAlignment="Center" Text="e.g. 64"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Favicon bundle -->
+                    <StackPanel x:Name="PanelFavicon" Visibility="Collapsed">
+                        <TextBlock Style="{StaticResource PanelTitle}" Text="Favicon bundle"/>
+                        <TextBlock Style="{StaticResource PanelDescription}"
+                                   Text="Generates favicon.ico, PNG icons in standard web sizes, and a site.webmanifest in one step, in a folder named after the source image (e.g. logo.favicon)."/>
+
+                        <Border Style="{StaticResource Card}" Padding="8,4">
+                            <Border Style="{StaticResource ToggleRow}" BorderThickness="0">
+                                <DockPanel>
+                                    <ToggleButton x:Name="FaviconToggle" DockPanel.Dock="Right" Style="{StaticResource SwitchToggle}"/>
+                                    <TextBlock Style="{StaticResource ToggleRowLabel}" Text="Show 'Create favicon bundle' on image files"/>
+                                </DockPanel>
+                            </Border>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Clipboard paste -->
+                    <StackPanel x:Name="PanelClipboard" Visibility="Collapsed">
+                        <TextBlock Style="{StaticResource PanelTitle}" Text="Clipboard paste"/>
+                        <TextBlock Style="{StaticResource PanelDescription}"
+                                   Text="Entries on the context menu of folders that save the clipboard image with an ISO-style timestamp filename."/>
+
+                        <Border Style="{StaticResource Card}" Padding="8,4">
+                            <StackPanel>
+                                <Border Style="{StaticResource ToggleRow}">
+                                    <DockPanel>
+                                        <ToggleButton x:Name="PastePngToggle" DockPanel.Dock="Right" Style="{StaticResource SwitchToggle}"/>
+                                        <TextBlock Style="{StaticResource ToggleRowLabel}" Text="Paste clipboard as PNG"/>
+                                    </DockPanel>
+                                </Border>
+                                <Border Style="{StaticResource ToggleRow}" BorderThickness="0">
+                                    <DockPanel>
+                                        <ToggleButton x:Name="PasteJpgToggle" DockPanel.Dock="Right" Style="{StaticResource SwitchToggle}"/>
+                                        <TextBlock Style="{StaticResource ToggleRowLabel}" Text="Paste clipboard as JPG"/>
+                                    </DockPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitle}" Text="Paste now"/>
+                                <TextBlock Style="{StaticResource Hint}"
+                                           Text="Save the current clipboard image to a file of your choice. These buttons work regardless of the context-menu switches."/>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <Button Style="{StaticResource FlatButton}"
+                                            Content="Paste as PNG"
+                                            Click="PasteClipboardAsPng_Click"/>
+                                    <Button Style="{StaticResource FlatButton}"
+                                            Content="Paste as JPG"
+                                            Margin="8,0,0,0"
+                                            Click="PasteClipboardAsJpg_Click"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Explorer integration -->
+                    <StackPanel x:Name="PanelIntegration" Visibility="Collapsed">
+                        <TextBlock Style="{StaticResource PanelTitle}" Text="Explorer integration"/>
+                        <TextBlock Style="{StaticResource PanelDescription}"
+                                   Text="How QConvert hooks into Windows Explorer. The context menu only contains the entries you enabled - if everything is off, no menu is registered at all."/>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitle}" Text="Context menu"/>
+                                <TextBlock Style="{StaticResource Hint}"
+                                           Text="Right-clicking a PNG, JPG, WebP, AVIF or ICO file shows a 'QConvert' submenu with the enabled entries. Changes are applied immediately. On Windows 11 it appears under 'Show more options'."/>
+                                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                    <Button Style="{StaticResource FlatButton}"
+                                            Content="Recreate context menu"
+                                            Click="RepairContextMenu_Click"/>
+                                    <Button Style="{StaticResource FlatButton}"
+                                            Content="Remove context menu"
+                                            Margin="8,0,0,0"
+                                            Click="Unregister_Click"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <DockPanel>
+                                    <ToggleButton DockPanel.Dock="Right" x:Name="SendToToggle"
+                                                  Style="{StaticResource SwitchToggle}"/>
+                                    <TextBlock Style="{StaticResource SectionTitle}" Text="'Send to' menu"/>
+                                </DockPanel>
+                                <TextBlock Style="{StaticResource Hint}"
+                                           Text="Adds QConvert to the Windows 'Send to' menu as an alternative entry point. Changes are applied immediately."/>
+                                <TextBlock x:Name="SendToStatus" Style="{StaticResource Hint}"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Diagnostics -->
+                    <StackPanel x:Name="PanelDiagnostics" Visibility="Collapsed">
+                        <TextBlock Style="{StaticResource PanelTitle}" Text="Diagnostics"/>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitle}" Text="Context menu registry"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                    <Button Style="{StaticResource FlatButton}"
+                                            Content="Refresh"
+                                            Click="RefreshDiagnostics_Click"/>
+                                    <Button Style="{StaticResource PrimaryButton}"
+                                            Content="Repair / recreate"
+                                            Margin="8,0,0,0"
+                                            Click="RepairContextMenu_Click"/>
+                                </StackPanel>
+                                <TextBlock x:Name="DiagnosticsStatusText"
+                                           Style="{StaticResource Hint}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <TextBox x:Name="DiagnosticsTextBox"
+                                     MinHeight="330"
+                                     IsReadOnly="True"
+                                     AcceptsReturn="True"
+                                     TextWrapping="NoWrap"
+                                     VerticalScrollBarVisibility="Auto"
+                                     HorizontalScrollBarVisibility="Auto"
+                                     FontFamily="Consolas"
+                                     FontSize="12"
+                                     BorderThickness="0"
+                                     Background="{StaticResource CardBrush}"/>
+                        </Border>
+                    </StackPanel>
+
+                </Grid>
+            </ScrollViewer>
+
+            <!-- Live preview of the resulting context menu -->
+            <controls:ContextMenuPreviewControl x:Name="ContextMenuPreview"
+                                                Grid.Column="2"/>
+
+        </Grid>
+
+        <!-- Status bar -->
+        <Border Grid.Row="2" Height="28" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="0,1,0,0" Background="#F9FAFB">
+            <StatusBar Background="Transparent" VerticalAlignment="Stretch">
+                <StatusBarItem Width="170" Padding="4,0" HorizontalContentAlignment="Left">
+                    <Border x:Name="ContextMenuStatusBadge" Padding="6,2" Background="#FEF3C7" CornerRadius="4" HorizontalAlignment="Center">
+                        <TextBlock x:Name="ContextMenuStatusText" Text="Context menu: off" FontWeight="SemiBold" Foreground="#924500" TextTrimming="CharacterEllipsis"/>
+                    </Border>
+                </StatusBarItem>
+                <Separator/>
+                <StatusBarItem Width="150">
+                    <TextBlock x:Name="SendToStatusText" Text="Send To: unknown" TextTrimming="CharacterEllipsis"/>
+                </StatusBarItem>
+                <Separator/>
+                <StatusBarItem>
+                    <TextBlock x:Name="StatusText" Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis"/>
+                </StatusBarItem>
+            </StatusBar>
         </Border>
-
-        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,16,20,4">
-            <StackPanel>
-
-                <Border Style="{StaticResource Card}">
-                    <StackPanel>
-                        <TextBlock Style="{StaticResource SectionTitle}" Text="JPEG quality"/>
-                        <TextBlock Style="{StaticResource Hint}"
-                                   Text="Used whenever a JPG file is written."/>
-                        <DockPanel Margin="0,10,0,0">
-                            <TextBlock DockPanel.Dock="Right"
-                                       Width="34" TextAlignment="Right" VerticalAlignment="Center"
-                                       FontWeight="SemiBold"
-                                       Text="{Binding ElementName=QualitySlider, Path=Value, StringFormat={}{0:0}}"/>
-                            <Slider x:Name="QualitySlider"
-                                    Minimum="1" Maximum="100"
-                                    TickFrequency="1" IsSnapToTickEnabled="True"
-                                    VerticalAlignment="Center"/>
-                        </DockPanel>
-                    </StackPanel>
-                </Border>
-
-                <Border Style="{StaticResource Card}">
-                    <StackPanel>
-                        <TextBlock Style="{StaticResource SectionTitle}" Text="Resize to fit"/>
-                        <TextBlock Style="{StaticResource Hint}"
-                                   Text="Scales the image down (never up) so it fits inside the selected box, keeping its aspect ratio."/>
-                        <WrapPanel x:Name="FitPanel" Margin="0,12,0,0"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                            <TextBox x:Name="FitCustomBox" Style="{StaticResource CustomEntryBox}"
-                                     KeyDown="FitCustomBox_KeyDown"/>
-                            <Button Style="{StaticResource FlatButton}" Content="Add" Padding="10,4"
-                                    Margin="6,0,0,0" Click="AddFitCustom_Click"/>
-                            <TextBlock Style="{StaticResource Hint}" Margin="10,0,0,0"
-                                       VerticalAlignment="Center" Text="e.g. 2048x1152"/>
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-
-                <Border Style="{StaticResource Card}">
-                    <StackPanel>
-                        <TextBlock Style="{StaticResource SectionTitle}" Text="Crop to size"/>
-                        <TextBlock Style="{StaticResource Hint}"
-                                   Text="Scales the image (up or down) until it covers the selected size, then crops the overlap. The result is exactly that size."/>
-                        <WrapPanel x:Name="CoverPanel" Margin="0,12,0,0"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                            <TextBox x:Name="CoverCustomBox" Style="{StaticResource CustomEntryBox}"
-                                     KeyDown="CoverCustomBox_KeyDown"/>
-                            <Button Style="{StaticResource FlatButton}" Content="Add" Padding="10,4"
-                                    Margin="6,0,0,0" Click="AddCoverCustom_Click"/>
-                            <TextBlock Style="{StaticResource Hint}" Margin="10,0,0,0"
-                                       VerticalAlignment="Center" Text="e.g. 1200x630"/>
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-
-                <Border Style="{StaticResource Card}">
-                    <StackPanel>
-                        <TextBlock Style="{StaticResource SectionTitle}" Text="Crop to aspect ratio"/>
-                        <TextBlock Style="{StaticResource Hint}"
-                                   Text="Cuts away the left/right or top/bottom excess to reach the selected ratio. No resizing — pixels are only removed."/>
-                        <WrapPanel x:Name="AspectPanel" Margin="0,12,0,0"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                            <TextBox x:Name="AspectCustomBox" Style="{StaticResource CustomEntryBox}"
-                                     KeyDown="AspectCustomBox_KeyDown"/>
-                            <Button Style="{StaticResource FlatButton}" Content="Add" Padding="10,4"
-                                    Margin="6,0,0,0" Click="AddAspectCustom_Click"/>
-                            <TextBlock Style="{StaticResource Hint}" Margin="10,0,0,0"
-                                       VerticalAlignment="Center" Text="e.g. 5:4"/>
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-
-                <Border Style="{StaticResource Card}">
-                    <StackPanel>
-                        <TextBlock Style="{StaticResource SectionTitle}" Text="Context menu"/>
-                        <TextBlock Style="{StaticResource Hint}"
-                                   Text="Right-clicking a PNG, JPG, WebP or ICO file shows a 'QConvert' submenu with the format conversions and the entries selected above. ICO output includes 16x16, 32x32, 48x48, 64x64 and 128x128 images. Saving rebuilds the menu. Converted copies keep the original name; existing names get a numeric suffix (photo.001.jpg). On Windows 11 the menu appears under 'Show more options'."/>
-                    </StackPanel>
-                </Border>
-
-            </StackPanel>
-        </ScrollViewer>
-    </DockPanel>
+    </Grid>
 </Window>

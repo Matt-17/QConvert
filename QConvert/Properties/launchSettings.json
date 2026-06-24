@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "QConvert": {
+      "commandName": "Project",
+      "commandLineArgs": "--open \"D:\\Downloads\\20260611_203430_02467683-f1ff-4ec6-b71c-ae0618cd7fe3.jpg\""
+    },
+    "QConvert Settings": {
+      "commandName": "Project"
+    }
+  }
+}

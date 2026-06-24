@@ -1,0 +1,18 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+
+  <PropertyGroup>
+    <OutputName>QConvert-$(ProductVersion)-x64</OutputName>
+    <OutputType>Package</OutputType>
+    <Platform>x64</Platform>
+    <ProductVersion Condition="'$(ProductVersion)' == ''">1.0.0</ProductVersion>
+    <PublishDir>$(MSBuildThisFileDirectory)..\artifacts\publish\QConvert\$(Configuration)\win-x64\</PublishDir>
+    <DefineConstants>PublishDir=$(PublishDir);ProductVersion=$(ProductVersion)</DefineConstants>
+  </PropertyGroup>
+
+  <Target Name="PublishQConvertForInstaller" BeforeTargets="BeforeBuild">
+    <RemoveDir Directories="$(PublishDir)" />
+    <Exec Command="dotnet publish &quot;..\QConvert\QConvert.csproj&quot; --configuration $(Configuration) --runtime win-x64 --self-contained true -p:PublishProfile=win-x64 -p:Version=$(ProductVersion) -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishReadyToRun=false -p:UseSharedCompilation=false --disable-build-servers --output &quot;$(PublishDir)&quot;" />
+    <Exec Command="dotnet publish &quot;..\QConvert.Cli\QConvert.Cli.csproj&quot; --configuration $(Configuration) --runtime win-x64 --self-contained true -p:Version=$(ProductVersion) -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishReadyToRun=false -p:UseSharedCompilation=false --disable-build-servers --output &quot;$(PublishDir)&quot;" />
+  </Target>
+
+</Project>

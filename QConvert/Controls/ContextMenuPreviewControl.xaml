@@ -1,0 +1,66 @@
+<UserControl x:Class="QConvert.Controls.ContextMenuPreviewControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{StaticResource SidebarBrush}">
+    <Border Background="{StaticResource SidebarBrush}"
+            BorderBrush="{StaticResource CardBorderBrush}"
+            BorderThickness="1,0,0,0">
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      Padding="16,18,16,8">
+            <StackPanel>
+                <Border Background="{StaticResource CardBrush}"
+                        BorderBrush="{StaticResource CardBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="10,8"
+                        Margin="0,0,0,14">
+                    <DockPanel>
+                        <ToggleButton x:Name="ContextMenuToggle"
+                                      DockPanel.Dock="Right"
+                                      Style="{StaticResource SwitchToggle}"
+                                      Checked="ContextMenuToggle_Changed"
+                                      Unchecked="ContextMenuToggle_Changed"/>
+                        <StackPanel Margin="0,0,12,0">
+                            <TextBlock Text="Context menu"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextBrush}"/>
+                            <TextBlock x:Name="ContextMenuPanelStatusText"
+                                       Style="{StaticResource Hint}"
+                                       Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+
+                <TextBlock Text="Live preview"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource TextBrush}"/>
+
+                <TextBlock Style="{StaticResource Hint}"
+                           Margin="0,14,0,4"
+                           Text="Preview file type:"/>
+                <ComboBox x:Name="PreviewExtensionBox"
+                          Width="150"
+                          HorizontalAlignment="Left"
+                          SelectedIndex="0"
+                          SelectionChanged="PreviewExtensionBox_SelectionChanged">
+                    <ComboBoxItem Content="PNG (.png)" Tag=".png"/>
+                    <ComboBoxItem Content="JPEG (.jpg)" Tag=".jpg"/>
+                    <ComboBoxItem Content="WebP (.webp)" Tag=".webp"/>
+                    <ComboBoxItem Content="AVIF (.avif)" Tag=".avif"/>
+                    <ComboBoxItem Content="Icon (.ico)" Tag=".ico"/>
+                </ComboBox>
+
+                <TextBlock x:Name="PreviewFileCaption" Style="{StaticResource MenuCaption}"/>
+                <Border Style="{StaticResource MenuCard}">
+                    <StackPanel x:Name="PreviewFileMenu"/>
+                </Border>
+
+                <TextBlock Style="{StaticResource MenuCaption}" Text="Right-click in a folder > QConvert"/>
+                <Border Style="{StaticResource MenuCard}">
+                    <StackPanel x:Name="PreviewFolderMenu"/>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+</UserControl>

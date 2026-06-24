@@ -2,17 +2,50 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\QConvert.ico</ApplicationIcon>
     <Version>1.0.0</Version>
     <Company>Code-iX</Company>
     <Product>QConvert</Product>
     <Authors>Code-iX</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Copyright>© Code-iX</Copyright>
     <Description>Fast image format conversion from the Explorer context menu.</Description>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\QConvert.ico" />
+    <Resource Include="Assets\QConvertLogo.png" />
+    <!-- QConvert.ico is referenced as a window Icon via a pack URI, so it must be a
+         Resource (embedded in the assembly). It must NOT also be Content: a Content
+         file becomes a ContentFilePart that WPF resolves against the app base dir,
+         which is empty under PublishSingleFile, causing a startup XamlParseException
+         (ArgumentNullException in Path.Combine). The MSI ships the loose .ico from
+         the source tree separately, so dropping the Content copy is safe. -->
+    <Content Include="Assets\QConvertTile150.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="Assets\QConvertTile70.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="Assets\QConvertTile44.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="QConvert.VisualElementsManifest.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\QConvert.Core\QConvert.Core.csproj" />
+  </ItemGroup>
 
 </Project>

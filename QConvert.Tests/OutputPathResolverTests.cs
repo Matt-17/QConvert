@@ -1,12 +1,13 @@
 using System.IO;
 
-using QConvert.Core;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using Xunit;
+using QConvert.Core;
 
 namespace QConvert.Tests
 {
-    public sealed class OutputPathResolverTests : IDisposable
+    [TestClass]
+    public sealed class OutputPathResolverTests
     {
         private readonly string _dir;
 
@@ -16,7 +17,8 @@ namespace QConvert.Tests
             Directory.CreateDirectory(_dir);
         }
 
-        public void Dispose() => Directory.Delete(_dir, recursive: true);
+        [TestCleanup]
+        public void Cleanup() => Directory.Delete(_dir, recursive: true);
 
         private string CreateFile(string name)
         {
@@ -25,17 +27,17 @@ namespace QConvert.Tests
             return path;
         }
 
-        [Fact]
+        [TestMethod]
         public void ReplacesExtension_WhenTargetDoesNotExist()
         {
             var input = CreateFile("photo.png");
 
             var result = OutputPathResolver.GetUniquePath(input, ".jpg");
 
-            Assert.Equal(Path.Combine(_dir, "photo.jpg"), result);
+            Assert.AreEqual(Path.Combine(_dir, "photo.jpg"), result);
         }
 
-        [Fact]
+        [TestMethod]
         public void InsertsNumericSuffix_WhenTargetExists()
         {
             var input = CreateFile("photo.png");
@@ -43,10 +45,10 @@ namespace QConvert.Tests
 
             var result = OutputPathResolver.GetUniquePath(input, ".jpg");
 
-            Assert.Equal(Path.Combine(_dir, "photo.001.jpg"), result);
+            Assert.AreEqual(Path.Combine(_dir, "photo.001.jpg"), result);
         }
 
-        [Fact]
+        [TestMethod]
         public void SkipsToNextFreeSuffix_WhenSuffixedNamesExist()
         {
             var input = CreateFile("photo.png");
@@ -56,20 +58,20 @@ namespace QConvert.Tests
 
             var result = OutputPathResolver.GetUniquePath(input, ".jpg");
 
-            Assert.Equal(Path.Combine(_dir, "photo.003.jpg"), result);
+            Assert.AreEqual(Path.Combine(_dir, "photo.003.jpg"), result);
         }
 
-        [Fact]
+        [TestMethod]
         public void PreservesDotsInBaseName()
         {
             var input = CreateFile("my.holiday.photo.webp");
 
             var result = OutputPathResolver.GetUniquePath(input, ".png");
 
-            Assert.Equal(Path.Combine(_dir, "my.holiday.photo.png"), result);
+            Assert.AreEqual(Path.Combine(_dir, "my.holiday.photo.png"), result);
         }
 
-        [Fact]
+        [TestMethod]
         public void Throws_WhenAllSuffixesAreTaken()
         {
             var input = CreateFile("photo.png");
@@ -79,7 +81,30 @@ namespace QConvert.Tests
                 CreateFile($"photo.{i:000}.jpg");
             }
 
-            Assert.Throws<IOException>(() => OutputPathResolver.GetUniquePath(input, ".jpg"));
+            Assert.ThrowsException<IOException>(() => OutputPathResolver.GetUniquePath(input, ".jpg"));
+        }
+
+        [TestMethod]
+        public void WithSubfolder_WritesIntoSubfolder()
+        {
+            var input = CreateFile("photo.png");
+            var settings = new AppSettings { UseSubfolder = true, SubfolderName = "_out" };
+            var result = OutputPathResolver.GetUniquePath(input, ".jpg", settings);
+            Assert.AreEqual(Path.Combine(_dir, "_out", "photo.jpg"), result);
+        }
+
+        [TestMethod]
+        public void ApplyPattern_ReplacesNameAndExt()
+        {
+            var result = OutputPathResolver.ApplyPattern("{name}-copy.{ext}", "photo", ".jpg", 0, 0);
+            Assert.AreEqual("photo-copy.jpg", result);
+        }
+
+        [TestMethod]
+        public void ApplyPattern_ReplacesWidthAndHeight()
+        {
+            var result = OutputPathResolver.ApplyPattern("{name}.{width}x{height}", "img", ".png", 1920, 1080);
+            Assert.AreEqual("img.1920x1080", result);
         }
     }
 }

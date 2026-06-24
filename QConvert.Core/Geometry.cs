@@ -6,4 +6,17 @@ namespace QConvert.Core
     }
 
     public readonly record struct PixelRect(int X, int Y, int Width, int Height);
+
+    public enum CropAnchor
+    {
+        Center,
+        Top,
+        Bottom,
+        Left,
+        Right,
+        TopLeft,
+        TopRight,
+        BottomLeft,
+        BottomRight,
+    }
 }

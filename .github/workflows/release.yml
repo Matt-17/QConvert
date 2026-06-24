@@ -1,63 +1,103 @@
 name: Release
 
-# Builds a winget-ready MSI from a version tag (v1.2.3), publishes it as a
-# GitHub Release, and submits the new version to microsoft/winget-pkgs.
-
 on:
   push:
-    tags: ['v*']
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
 
 jobs:
   release:
+    name: Publish release artifacts
     runs-on: windows-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+      WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out repository
+        uses: actions/checkout@v6
 
-      - uses: actions/setup-dotnet@v4
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 10.0.x
 
-      - name: Derive version from tag
-        id: version
+      - name: Resolve version from tag
+        id: resolve_version
         shell: pwsh
         run: |
-          $version = "${{ github.ref_name }}".TrimStart('v')
-          "version=$version" >> $env:GITHUB_OUTPUT
+          if (-not "${{ github.ref_name }}".StartsWith("v")) {
+            Write-Error "Tag must start with 'v'."
+            exit 1
+          }
+          $version = "${{ github.ref_name }}".Substring(1)
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+            Write-Error "Tag must be in the form vX.Y.Z. Found '${version}'."
+            exit 1
+          }
+          echo "version=$version" >> $env:GITHUB_OUTPUT
 
-      - name: Run tests
-        run: dotnet test QConvert.Tests/QConvert.Tests.csproj -c Release
+      - name: Restore
+        run: dotnet restore QConvert.slnx
 
-      - name: Publish application
+      - name: Build
         run: >
-          dotnet publish QConvert/QConvert.csproj -c Release -r win-x64
-          --self-contained false -p:PublishSingleFile=true
-          -p:Version=${{ steps.version.outputs.version }}
-          -o publish
+          dotnet build QConvert.slnx
+          --configuration Release
+          --no-restore
+          --disable-build-servers
+          /m:1
+          /p:BuildInParallel=false
+          -p:UseSharedCompilation=false
+
+      - name: Test
+        run: dotnet test QConvert.slnx --configuration Release --no-build --disable-build-servers
+
+      - name: Build and publish win-x64 app
+        run: >
+          dotnet publish QConvert/QConvert.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          -p:PublishProfile=win-x64
+          -p:Version=${{ steps.resolve_version.outputs.version }}
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:PublishReadyToRun=false
+          -p:UseSharedCompilation=false
+          --disable-build-servers
+          --output artifacts/publish/QConvert/Release/win-x64
 
       - name: Build MSI
+        run: dotnet build QConvert.Installer/QConvert.Installer.wixproj --configuration Release -p:ProductVersion=${{ steps.resolve_version.outputs.version }} -p:UseSharedCompilation=false
+
+      - name: Collect MSI path
+        id: collect_msi
+        shell: pwsh
         run: |
-          dotnet tool install --global wix --version "6.*"
-          wix build installer/Package.wxs -arch x64 -d Version=${{ steps.version.outputs.version }} -d PublishDir=publish -o QConvert-${{ steps.version.outputs.version }}-x64.msi
+          $msi = "QConvert.Installer/bin/x64/Release/QConvert-${{ steps.resolve_version.outputs.version }}-x64.msi"
+          if (-not (Test-Path $msi)) {
+            throw "Missing MSI at $msi"
+          }
+          echo "path=$msi" >> $env:GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: QConvert-*.msi
-          generate_release_notes: true
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          files: ${{ steps.collect_msi.outputs.path }}
 
-  winget:
-    needs: release
-    runs-on: windows-latest
-    steps:
-      # Submits a version update PR to microsoft/winget-pkgs. Requires:
-      #  - the package to exist there already (see docs/RELEASING.md for the
-      #    initial submission), and
-      #  - a WINGET_TOKEN repo secret (classic PAT with public_repo scope).
-      - uses: vedantmgoyal9/winget-releaser@v2
+      - name: Submit or update Winget package
+        if: ${{ env.WINGET_TOKEN != '' }}
+        uses: vedantmgoyal2009/winget-releaser@v2
         with:
           identifier: Code-iX.QConvert
-          installers-regex: '\.msi$'
-          token: ${{ secrets.WINGET_TOKEN }}
+          installers-regex: '^QConvert-\d+\.\d+\.\d+-x64\.msi$'
+          release-tag: ${{ github.ref_name }}
+          package-version: ${{ steps.resolve_version.outputs.version }}
+          token: ${{ env.WINGET_TOKEN }}

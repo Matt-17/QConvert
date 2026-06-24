@@ -5,6 +5,8 @@ namespace QConvert.Core
         Jpeg,
         Png,
         Ico,
+        WebP,
+        Avif,
     }
 
     public static class ConversionTargetExtensions
@@ -14,6 +16,8 @@ namespace QConvert.Core
             ConversionTarget.Jpeg => ".jpg",
             ConversionTarget.Png => ".png",
             ConversionTarget.Ico => ".ico",
+            ConversionTarget.WebP => ".webp",
+            ConversionTarget.Avif => ".avif",
             _ => throw new ArgumentOutOfRangeException(nameof(target), target, null),
         };
 
@@ -22,6 +26,8 @@ namespace QConvert.Core
             ConversionTarget.Jpeg => "jpg",
             ConversionTarget.Png => "png",
             ConversionTarget.Ico => "ico",
+            ConversionTarget.WebP => "webp",
+            ConversionTarget.Avif => "avif",
             _ => throw new ArgumentOutOfRangeException(nameof(target), target, null),
         };
 
@@ -30,6 +36,8 @@ namespace QConvert.Core
             ConversionTarget.Jpeg => "JPG",
             ConversionTarget.Png => "PNG",
             ConversionTarget.Ico => "ICO",
+            ConversionTarget.WebP => "WebP",
+            ConversionTarget.Avif => "AVIF",
             _ => throw new ArgumentOutOfRangeException(nameof(target), target, null),
         };
 
@@ -38,6 +46,8 @@ namespace QConvert.Core
             "jpg" or "jpeg" => ConversionTarget.Jpeg,
             "png" => ConversionTarget.Png,
             "ico" => ConversionTarget.Ico,
+            "webp" => ConversionTarget.WebP,
+            "avif" => ConversionTarget.Avif,
             _ => null,
         };
     }

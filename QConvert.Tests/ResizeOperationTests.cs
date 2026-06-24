@@ -2,13 +2,14 @@ using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-using QConvert.Core;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using Xunit;
+using QConvert.Core;
 
 namespace QConvert.Tests
 {
-    public sealed class ResizeOperationTests : IDisposable
+    [TestClass]
+    public sealed class ResizeOperationTests
     {
         private readonly string _dir;
 
@@ -18,7 +19,8 @@ namespace QConvert.Tests
             Directory.CreateDirectory(_dir);
         }
 
-        public void Dispose() => Directory.Delete(_dir, recursive: true);
+        [TestCleanup]
+        public void Cleanup() => Directory.Delete(_dir, recursive: true);
 
         private string CreatePng(string name, int width, int height)
         {
@@ -47,68 +49,91 @@ namespace QConvert.Tests
             return new PixelSize(frame.PixelWidth, frame.PixelHeight);
         }
 
-        [Fact]
+        [TestMethod]
         public void ResizeToFit_ScalesDownIntoBox()
         {
             var input = CreatePng("wide.png", 400, 200);
 
             var output = Core.ImageConverter.ResizeToFit(input, new PixelSize(100, 100));
 
-            Assert.Equal(new PixelSize(100, 50), SizeOf(output));
-            Assert.Equal(Path.Combine(_dir, "wide.100x50.png"), output);
+            Assert.AreEqual(new PixelSize(100, 50), SizeOf(output));
+            Assert.AreEqual(Path.Combine(_dir, "wide.100x50.png"), output);
         }
 
-        [Fact]
+        [TestMethod]
         public void ResizeToFit_DoesNotUpscale()
         {
             var input = CreatePng("small.png", 40, 20);
 
             var output = Core.ImageConverter.ResizeToFit(input, new PixelSize(1920, 1080));
 
-            Assert.Equal(new PixelSize(40, 20), SizeOf(output));
+            Assert.AreEqual(new PixelSize(40, 20), SizeOf(output));
         }
 
-        [Fact]
+        [TestMethod]
+        public void ResizeToFit_CanStretchToExactBox()
+        {
+            var input = CreatePng("stretch.png", 400, 200);
+
+            var output = Core.ImageConverter.ResizeToFit(input, new PixelSize(100, 80), keepAspect: false);
+
+            Assert.AreEqual(new PixelSize(100, 80), SizeOf(output));
+        }
+
+        [TestMethod]
         public void CropToSize_ProducesExactTargetSize()
         {
             var input = CreatePng("photo.png", 400, 300);
 
             var output = Core.ImageConverter.CropToSize(input, new PixelSize(100, 50));
 
-            Assert.Equal(new PixelSize(100, 50), SizeOf(output));
+            Assert.AreEqual(new PixelSize(100, 50), SizeOf(output));
         }
 
-        [Fact]
+        [TestMethod]
+        public void CropAndResize_CropsSourcePixelsThenResizes()
+        {
+            var input = CreatePng("crop-resize.png", 400, 300);
+
+            var output = Core.ImageConverter.CropAndResize(
+                input,
+                new PixelRect(50, 25, 200, 100),
+                new PixelSize(80, 40));
+
+            Assert.AreEqual(new PixelSize(80, 40), SizeOf(output));
+        }
+
+        [TestMethod]
         public void CropToSize_UpscalesSmallImages()
         {
             var input = CreatePng("tiny.png", 50, 50);
 
             var output = Core.ImageConverter.CropToSize(input, new PixelSize(200, 100));
 
-            Assert.Equal(new PixelSize(200, 100), SizeOf(output));
+            Assert.AreEqual(new PixelSize(200, 100), SizeOf(output));
         }
 
-        [Fact]
+        [TestMethod]
         public void CropToAspect_RemovesSidesWithoutResizing()
         {
             var input = CreatePng("pano.png", 400, 100);
 
             var output = Core.ImageConverter.CropToAspect(input, 1, 1);
 
-            Assert.Equal(new PixelSize(100, 100), SizeOf(output));
+            Assert.AreEqual(new PixelSize(100, 100), SizeOf(output));
         }
 
-        [Fact]
+        [TestMethod]
         public void CropToAspect_KeepsMatchingImageUnchanged()
         {
             var input = CreatePng("square.png", 120, 90);
 
             var output = Core.ImageConverter.CropToAspect(input, 4, 3);
 
-            Assert.Equal(new PixelSize(120, 90), SizeOf(output));
+            Assert.AreEqual(new PixelSize(120, 90), SizeOf(output));
         }
 
-        [Fact]
+        [TestMethod]
         public void SizeOperations_KeepJpegSourcesAsJpeg()
         {
             var png = CreatePng("source.png", 200, 100);
@@ -116,11 +141,11 @@ namespace QConvert.Tests
 
             var output = Core.ImageConverter.ResizeToFit(jpg, new PixelSize(100, 100));
 
-            Assert.EndsWith(".jpg", output);
-            Assert.Equal(new PixelSize(100, 50), SizeOf(output));
+            StringAssert.EndsWith(output, ".jpg");
+            Assert.AreEqual(new PixelSize(100, 50), SizeOf(output));
         }
 
-        [Fact]
+        [TestMethod]
         public void SizeOperations_UseCollisionSuffixWhenNameTaken()
         {
             var input = CreatePng("twice.png", 400, 200);
@@ -128,8 +153,9 @@ namespace QConvert.Tests
             var first = Core.ImageConverter.ResizeToFit(input, new PixelSize(100, 100));
             var second = Core.ImageConverter.ResizeToFit(input, new PixelSize(100, 100));
 
-            Assert.Equal(Path.Combine(_dir, "twice.100x50.png"), first);
-            Assert.Equal(Path.Combine(_dir, "twice.001.100x50.png"), second);
+            Assert.AreEqual(Path.Combine(_dir, "twice.100x50.png"), first);
+            Assert.AreEqual(Path.Combine(_dir, "twice.100x50.001.png"), second);
         }
     }
 }
+

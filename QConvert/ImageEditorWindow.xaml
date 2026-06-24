@@ -1,0 +1,682 @@
+<Window x:Class="QConvert.ImageEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:QConvert.Controls"
+        Title="QConvert Editor"
+        Icon="Assets/QConvert.ico"
+        Width="1280" Height="780"
+        MinWidth="980" MinHeight="620"
+        Background="{StaticResource WindowBrush}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResizeWithGrip"
+        FontFamily="Segoe UI" FontSize="13"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Menu Grid.Row="0">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Save result" Click="SaveResult_Click"/>
+                <MenuItem Header="Save _as..." Click="SaveAsResult_Click"/>
+                <Separator/>
+                <MenuItem Header="E_xit" Click="Exit_Click"/>
+            </MenuItem>
+            <MenuItem Header="_QConvert">
+                <MenuItem Header="_Settings" Click="Settings_Click"/>
+            </MenuItem>
+            <MenuItem Header="_Help">
+                    <MenuItem Header="_About QConvert" Click="Info_Click"/>
+            </MenuItem>
+        </Menu>
+
+        <Border Grid.Row="1"
+                Background="{StaticResource CardBrush}"
+                BorderBrush="{StaticResource CardBorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="14,10">
+            <DockPanel LastChildFill="True">
+                <StackPanel>
+                    <TextBlock x:Name="ImageTitleText"
+                               Style="{StaticResource SectionTitle}"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="ImagePathText"
+                               Style="{StaticResource Hint}"
+                               TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="230"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="360"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0"
+                    Background="{StaticResource SidebarBrush}"
+                    BorderBrush="{StaticResource CardBorderBrush}"
+                    BorderThickness="0,0,1,0">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="Tools"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource TextBrush}"
+                               Margin="18,16,18,8"/>
+                    <ListBox x:Name="ToolList"
+                             Style="{StaticResource NavList}"
+                             SelectionChanged="ToolList_SelectionChanged"
+                             Padding="0,0,0,12">
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="Convert" IsSelected="True">
+                            <TextBlock Style="{StaticResource NavLabel}" Text="Convert format"/>
+                        </ListBoxItem>
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="Fit">
+                            <TextBlock Style="{StaticResource NavLabel}" Text="Resize to fit"/>
+                        </ListBoxItem>
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="Cover">
+                            <TextBlock Style="{StaticResource NavLabel}" Text="Crop to size"/>
+                        </ListBoxItem>
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="Aspect">
+                            <TextBlock Style="{StaticResource NavLabel}" Text="Crop to aspect"/>
+                        </ListBoxItem>
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="Avatar">
+                            <TextBlock Style="{StaticResource NavLabel}" Text="Avatar export"/>
+                        </ListBoxItem>
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="Sepia">
+                            <TextBlock Style="{StaticResource NavLabel}" Text="Sepia filter"/>
+                        </ListBoxItem>
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="Compress">
+                            <TextBlock Style="{StaticResource NavLabel}" Text="Compress JPG"/>
+                        </ListBoxItem>
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="OptimizePng">
+                            <TextBlock Style="{StaticResource NavLabel}" Text="Optimize PNG"/>
+                        </ListBoxItem>
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="Metadata">
+                            <TextBlock Style="{StaticResource NavLabel}" Text="Remove metadata"/>
+                        </ListBoxItem>
+                        <ListBoxItem Style="{StaticResource NavItem}" Tag="Favicon">
+                            <TextBlock Style="{StaticResource NavLabel}" Text="Favicon bundle"/>
+                        </ListBoxItem>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <Grid Grid.Column="1"
+                  x:Name="PreviewHost"
+                  Background="#111827"
+                  ClipToBounds="True"
+                  SizeChanged="PreviewHost_SizeChanged">
+                <Viewbox x:Name="ImagePreviewViewbox"
+                         Stretch="Uniform"
+                         StretchDirection="Both"
+                         Margin="24">
+                    <Canvas x:Name="ImageCanvas"
+                            Width="1"
+                            Height="1"
+                            Background="#111827"
+                            ClipToBounds="False">
+                        <Image x:Name="OriginalImage"
+                               Stretch="Fill"
+                               SnapsToDevicePixels="True"/>
+                        <Rectangle x:Name="CropDimTop"
+                                   Fill="#99000000"
+                                   Visibility="Collapsed"
+                                   IsHitTestVisible="False"/>
+                        <Rectangle x:Name="CropDimBottom"
+                                   Fill="#99000000"
+                                   Visibility="Collapsed"
+                                   IsHitTestVisible="False"/>
+                        <Rectangle x:Name="CropDimLeft"
+                                   Fill="#99000000"
+                                   Visibility="Collapsed"
+                                   IsHitTestVisible="False"/>
+                        <Rectangle x:Name="CropDimRight"
+                                   Fill="#99000000"
+                                   Visibility="Collapsed"
+                                   IsHitTestVisible="False"/>
+                        <Image x:Name="PreviewImage"
+                               Stretch="Fill"
+                               SnapsToDevicePixels="True"
+                               Visibility="Collapsed"
+                               MouseLeftButtonDown="PreviewImage_MouseLeftButtonDown"
+                               MouseMove="PreviewImage_MouseMove"
+                               MouseLeftButtonUp="PreviewImage_MouseLeftButtonUp"/>
+                    </Canvas>
+                </Viewbox>
+                <ScrollViewer x:Name="IconPreviewScroll"
+                              Visibility="Collapsed"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Auto"
+                              Padding="24">
+                    <StackPanel x:Name="IconPreviewPanel"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center"/>
+                </ScrollViewer>
+            </Grid>
+
+            <Border Grid.Column="2"
+                    Background="{StaticResource SidebarBrush}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="18,16,18,12">
+                    <StackPanel>
+                        <TextBlock x:Name="ToolTitleText"
+                                   Style="{StaticResource PanelTitle}"/>
+                        <TextBlock x:Name="ToolDescriptionText"
+                                   Style="{StaticResource PanelDescription}"/>
+
+                        <Border x:Name="ConvertPanel" Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitle}" Text="Target format"/>
+                                <ComboBox x:Name="ConvertTargetBox"
+                                          Width="150"
+                                          HorizontalAlignment="Left"
+                                          Margin="0,8,0,0"
+                                          SelectionChanged="RefreshOnSelectionChanged">
+                                    <ComboBoxItem Content="JPG" Tag="Jpeg"/>
+                                    <ComboBoxItem Content="PNG" Tag="Png"/>
+                                    <ComboBoxItem Content="WebP" Tag="WebP"/>
+                                    <ComboBoxItem Content="AVIF" Tag="Avif"/>
+                                    <ComboBoxItem Content="ICO" Tag="Ico"/>
+                                </ComboBox>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="FitPanel" Style="{StaticResource Card}" Visibility="Collapsed">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitle}" Text="Bounding box"/>
+                                <DockPanel Margin="0,8,0,0">
+                                    <ToggleButton x:Name="FitKeepAspectToggle"
+                                                  DockPanel.Dock="Right"
+                                                  Style="{StaticResource SwitchToggle}"
+                                                  IsChecked="True"
+                                                  Checked="RefreshOnToggleChanged"
+                                                  Unchecked="RefreshOnToggleChanged"/>
+                                    <TextBlock Style="{StaticResource ToggleRowLabel}"
+                                               Text="Keep aspect"/>
+                                </DockPanel>
+                                <UniformGrid Columns="2" Margin="0,10,0,0">
+                                    <StackPanel Margin="0,0,6,0">
+                                        <TextBlock Text="Width"
+                                                   Style="{StaticResource Hint}"
+                                                   Cursor="SizeWE"
+                                                   Tag="{Binding ElementName=FitWidthBox}"
+                                                   MouseLeftButtonDown="NumericLabel_MouseLeftButtonDown"
+                                                   MouseMove="NumericLabel_MouseMove"
+                                                   MouseLeftButtonUp="NumericLabel_MouseLeftButtonUp"/>
+                                        <TextBox x:Name="FitWidthBox" TextChanged="RefreshOnTextChanged"/>
+                                    </StackPanel>
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Height"
+                                                   Style="{StaticResource Hint}"
+                                                   Cursor="SizeWE"
+                                                   Tag="{Binding ElementName=FitHeightBox}"
+                                                   MouseLeftButtonDown="NumericLabel_MouseLeftButtonDown"
+                                                   MouseMove="NumericLabel_MouseMove"
+                                                   MouseLeftButtonUp="NumericLabel_MouseLeftButtonUp"/>
+                                        <TextBox x:Name="FitHeightBox" TextChanged="RefreshOnTextChanged"/>
+                                    </StackPanel>
+                                </UniformGrid>
+                                <TextBlock x:Name="FitResultSizeText"
+                                           Style="{StaticResource Hint}"
+                                           Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="CoverPanel" Style="{StaticResource Card}" Visibility="Collapsed">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitle}" Text="Crop rectangle"/>
+                                <UniformGrid Columns="2" Margin="0,10,0,8">
+                                    <StackPanel Margin="0,0,6,0">
+                                        <TextBlock Text="Width"
+                                                   Style="{StaticResource Hint}"
+                                                   Cursor="SizeWE"
+                                                   Tag="{Binding ElementName=CoverWidthBox}"
+                                                   MouseLeftButtonDown="NumericLabel_MouseLeftButtonDown"
+                                                   MouseMove="NumericLabel_MouseMove"
+                                                   MouseLeftButtonUp="NumericLabel_MouseLeftButtonUp"/>
+                                        <TextBox x:Name="CoverWidthBox" TextChanged="RefreshOnTextChanged"/>
+                                    </StackPanel>
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Height"
+                                                   Style="{StaticResource Hint}"
+                                                   Cursor="SizeWE"
+                                                   Tag="{Binding ElementName=CoverHeightBox}"
+                                                   MouseLeftButtonDown="NumericLabel_MouseLeftButtonDown"
+                                                   MouseMove="NumericLabel_MouseMove"
+                                                   MouseLeftButtonUp="NumericLabel_MouseLeftButtonUp"/>
+                                        <TextBox x:Name="CoverHeightBox" TextChanged="RefreshOnTextChanged"/>
+                                    </StackPanel>
+                                </UniformGrid>
+                                <UniformGrid Columns="2" Margin="0,0,0,12">
+                                    <StackPanel Margin="0,0,6,0">
+                                        <TextBlock Text="Output width"
+                                                   Style="{StaticResource Hint}"
+                                                   Cursor="SizeWE"
+                                                   Tag="{Binding ElementName=CoverResizeWidthBox}"
+                                                   MouseLeftButtonDown="NumericLabel_MouseLeftButtonDown"
+                                                   MouseMove="NumericLabel_MouseMove"
+                                                   MouseLeftButtonUp="NumericLabel_MouseLeftButtonUp"/>
+                                        <TextBox x:Name="CoverResizeWidthBox" TextChanged="RefreshOnTextChanged"/>
+                                    </StackPanel>
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Output height"
+                                                   Style="{StaticResource Hint}"
+                                                   Cursor="SizeWE"
+                                                   Tag="{Binding ElementName=CoverResizeHeightBox}"
+                                                   MouseLeftButtonDown="NumericLabel_MouseLeftButtonDown"
+                                                   MouseMove="NumericLabel_MouseMove"
+                                                   MouseLeftButtonUp="NumericLabel_MouseLeftButtonUp"/>
+                                        <TextBox x:Name="CoverResizeHeightBox" TextChanged="RefreshOnTextChanged"/>
+                                    </StackPanel>
+                                </UniformGrid>
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right"
+                                            Style="{StaticResource FlatButton}"
+                                            Content="Center"
+                                            Padding="10,4"
+                                            Click="CenterCrop_Click"/>
+                                    <TextBlock Style="{StaticResource SectionTitle}"
+                                               Text="Position"
+                                               VerticalAlignment="Center"/>
+                                </DockPanel>
+                                <UniformGrid Columns="2" Margin="0,8,0,0">
+                                    <StackPanel Margin="0,0,6,0">
+                                        <TextBlock Text="X px"
+                                                   Style="{StaticResource Hint}"
+                                                   Cursor="SizeWE"
+                                                   Tag="{Binding ElementName=CoverPositionXBox}"
+                                                   MouseLeftButtonDown="NumericLabel_MouseLeftButtonDown"
+                                                   MouseMove="NumericLabel_MouseMove"
+                                                   MouseLeftButtonUp="NumericLabel_MouseLeftButtonUp"/>
+                                        <TextBox x:Name="CoverPositionXBox" TextChanged="RefreshOnTextChanged"/>
+                                    </StackPanel>
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Y px"
+                                                   Style="{StaticResource Hint}"
+                                                   Cursor="SizeWE"
+                                                   Tag="{Binding ElementName=CoverPositionYBox}"
+                                                   MouseLeftButtonDown="NumericLabel_MouseLeftButtonDown"
+                                                   MouseMove="NumericLabel_MouseMove"
+                                                   MouseLeftButtonUp="NumericLabel_MouseLeftButtonUp"/>
+                                        <TextBox x:Name="CoverPositionYBox" TextChanged="RefreshOnTextChanged"/>
+                                    </StackPanel>
+                                </UniformGrid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="AspectPanel" Style="{StaticResource Card}" Visibility="Collapsed">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitle}" Text="Aspect ratio"/>
+                                <UniformGrid Columns="2" Margin="0,10,0,0">
+                                    <StackPanel Margin="0,0,6,0">
+                                        <TextBlock Text="X"
+                                                   Style="{StaticResource Hint}"
+                                                   Cursor="SizeWE"
+                                                   Tag="{Binding ElementName=AspectXBox}"
+                                                   MouseLeftButtonDown="NumericLabel_MouseLeftButtonDown"
+                                                   MouseMove="NumericLabel_MouseMove"
+                                                   MouseLeftButtonUp="NumericLabel_MouseLeftButtonUp"/>
+                                        <TextBox x:Name="AspectXBox" TextChanged="RefreshOnTextChanged"/>
+                                    </StackPanel>
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Y"
+                                                   Style="{StaticResource Hint}"
+                                                   Cursor="SizeWE"
+                                                   Tag="{Binding ElementName=AspectYBox}"
+                                                   MouseLeftButtonDown="NumericLabel_MouseLeftButtonDown"
+                                                   MouseMove="NumericLabel_MouseMove"
+                                                   MouseLeftButtonUp="NumericLabel_MouseLeftButtonUp"/>
+                                        <TextBox x:Name="AspectYBox" TextChanged="RefreshOnTextChanged"/>
+                                    </StackPanel>
+                                </UniformGrid>
+                                <DockPanel Margin="0,12,0,0">
+                                    <Button DockPanel.Dock="Right"
+                                            Style="{StaticResource FlatButton}"
+                                            Content="Center"
+                                            Padding="10,4"
+                                            Click="CenterCrop_Click"/>
+                                    <TextBlock Style="{StaticResource SectionTitle}"
+                                               Text="Position"
+                                               VerticalAlignment="Center"/>
+                                </DockPanel>
+                                <UniformGrid Columns="2" Margin="0,8,0,0">
+                                    <StackPanel Margin="0,0,6,0">
+                                        <TextBlock Text="X %"
+                                                   Style="{StaticResource Hint}"
+                                                   Cursor="SizeWE"
+                                                   Tag="{Binding ElementName=AspectPositionXBox}"
+                                                   MouseLeftButtonDown="NumericLabel_MouseLeftButtonDown"
+                                                   MouseMove="NumericLabel_MouseMove"
+                                                   MouseLeftButtonUp="NumericLabel_MouseLeftButtonUp"/>
+                                        <TextBox x:Name="AspectPositionXBox" TextChanged="RefreshOnTextChanged"/>
+                                    </StackPanel>
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Y %"
+                                                   Style="{StaticResource Hint}"
+                                                   Cursor="SizeWE"
+                                                   Tag="{Binding ElementName=AspectPositionYBox}"
+                                                   MouseLeftButtonDown="NumericLabel_MouseLeftButtonDown"
+                                                   MouseMove="NumericLabel_MouseMove"
+                                                   MouseLeftButtonUp="NumericLabel_MouseLeftButtonUp"/>
+                                        <TextBox x:Name="AspectPositionYBox" TextChanged="RefreshOnTextChanged"/>
+                                    </StackPanel>
+                                </UniformGrid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="AvatarPanel" Style="{StaticResource Card}" Visibility="Collapsed">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitle}" Text="Square size"/>
+                                <StackPanel Width="110" HorizontalAlignment="Left" Margin="0,8,0,12">
+                                    <TextBlock Text="Size"
+                                               Style="{StaticResource Hint}"
+                                               Cursor="SizeWE"
+                                               Tag="{Binding ElementName=AvatarSizeBox}"
+                                               MouseLeftButtonDown="NumericLabel_MouseLeftButtonDown"
+                                               MouseMove="NumericLabel_MouseMove"
+                                               MouseLeftButtonUp="NumericLabel_MouseLeftButtonUp"/>
+                                    <TextBox x:Name="AvatarSizeBox" TextChanged="RefreshOnTextChanged"/>
+                                </StackPanel>
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right"
+                                            Style="{StaticResource FlatButton}"
+                                            Content="Center"
+                                            Padding="10,4"
+                                            Click="CenterCrop_Click"/>
+                                    <TextBlock Style="{StaticResource SectionTitle}"
+                                               Text="Position"
+                                               VerticalAlignment="Center"/>
+                                </DockPanel>
+                                <UniformGrid Columns="2" Margin="0,8,0,0">
+                                    <StackPanel Margin="0,0,6,0">
+                                        <TextBlock Text="X %"
+                                                   Style="{StaticResource Hint}"
+                                                   Cursor="SizeWE"
+                                                   Tag="{Binding ElementName=AvatarPositionXBox}"
+                                                   MouseLeftButtonDown="NumericLabel_MouseLeftButtonDown"
+                                                   MouseMove="NumericLabel_MouseMove"
+                                                   MouseLeftButtonUp="NumericLabel_MouseLeftButtonUp"/>
+                                        <TextBox x:Name="AvatarPositionXBox" TextChanged="RefreshOnTextChanged"/>
+                                    </StackPanel>
+                                    <StackPanel Margin="6,0,0,0">
+                                        <TextBlock Text="Y %"
+                                                   Style="{StaticResource Hint}"
+                                                   Cursor="SizeWE"
+                                                   Tag="{Binding ElementName=AvatarPositionYBox}"
+                                                   MouseLeftButtonDown="NumericLabel_MouseLeftButtonDown"
+                                                   MouseMove="NumericLabel_MouseMove"
+                                                   MouseLeftButtonUp="NumericLabel_MouseLeftButtonUp"/>
+                                        <TextBox x:Name="AvatarPositionYBox" TextChanged="RefreshOnTextChanged"/>
+                                    </StackPanel>
+                                </UniformGrid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="SepiaPanel" Style="{StaticResource Card}" Visibility="Collapsed">
+                            <StackPanel>
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right"
+                                            Style="{StaticResource FlatButton}"
+                                            Content="Default"
+                                            Padding="10,4"
+                                            Click="SepiaDefault_Click"/>
+                                    <TextBlock Style="{StaticResource SectionTitle}"
+                                               Text="Tone"
+                                               VerticalAlignment="Center"/>
+                                </DockPanel>
+
+                                <DockPanel Margin="0,12,0,0">
+                                    <TextBlock x:Name="SepiaIntensityValueText"
+                                               DockPanel.Dock="Right"
+                                               Width="42"
+                                               TextAlignment="Right"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextBrush}"/>
+                                    <TextBlock Text="Intensity"
+                                               Style="{StaticResource Hint}"
+                                               Margin="0,0,0,4"/>
+                                </DockPanel>
+                                <Slider x:Name="SepiaIntensitySlider"
+                                        Minimum="0"
+                                        Maximum="100"
+                                        TickFrequency="1"
+                                        IsSnapToTickEnabled="True"
+                                        ValueChanged="SepiaControl_Changed"/>
+
+                                <DockPanel Margin="0,14,0,6">
+                                    <StackPanel DockPanel.Dock="Right"
+                                                Orientation="Horizontal"
+                                                VerticalAlignment="Center">
+                                        <Border x:Name="SepiaHueSwatch"
+                                                Width="18"
+                                                Height="18"
+                                                CornerRadius="9"
+                                                BorderBrush="{StaticResource CardBorderBrush}"
+                                                BorderThickness="1"
+                                                Margin="0,0,8,0"/>
+                                        <TextBlock x:Name="SepiaHueValueText"
+                                                   Width="58"
+                                                   TextAlignment="Right"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextBrush}"/>
+                                    </StackPanel>
+                                    <TextBlock Text="Tone"
+                                               Style="{StaticResource Hint}"
+                                               Margin="0"/>
+                                </DockPanel>
+                                <Grid Height="30">
+                                    <Border CornerRadius="6"
+                                            BorderBrush="{StaticResource CardBorderBrush}"
+                                            BorderThickness="1">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                                <GradientStop Color="#FF0000" Offset="0"/>
+                                                <GradientStop Color="#FFFF00" Offset="0.1667"/>
+                                                <GradientStop Color="#00FF00" Offset="0.3333"/>
+                                                <GradientStop Color="#00FFFF" Offset="0.5"/>
+                                                <GradientStop Color="#0000FF" Offset="0.6667"/>
+                                                <GradientStop Color="#FF00FF" Offset="0.8333"/>
+                                                <GradientStop Color="#FF0000" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                    </Border>
+                                    <Slider x:Name="SepiaHueSlider"
+                                            Minimum="0"
+                                            Maximum="359"
+                                            TickFrequency="1"
+                                            IsSnapToTickEnabled="True"
+                                            VerticalAlignment="Center"
+                                            Margin="4,0"
+                                            Background="Transparent"
+                                            ValueChanged="SepiaControl_Changed"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="CompressPanel" Style="{StaticResource Card}" Visibility="Collapsed"/>
+                        <Border x:Name="OptimizePngPanel" Style="{StaticResource Card}" Visibility="Collapsed"/>
+                        <Border x:Name="MetadataPanel" Style="{StaticResource Card}" Visibility="Collapsed"/>
+                        <Border x:Name="FaviconPanel" Style="{StaticResource Card}" Visibility="Collapsed"/>
+
+                        <Border x:Name="IcoSizesCard" Style="{StaticResource Card}" Visibility="Collapsed">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitle}" Text="ICO sizes"/>
+                                <TextBlock Style="{StaticResource Hint}"
+                                           Text="All listed sizes are embedded in the ICO file."/>
+                                <controls:IcoSizeListControl x:Name="IcoSizesList"
+                                                             Margin="0,10,0,10"/>
+                            </StackPanel>
+                        </Border>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="3"
+                Background="{StaticResource CardBrush}"
+                BorderBrush="{StaticResource CardBorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="14,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <CheckBox x:Name="PreviewToggle"
+                          Grid.Column="0"
+                          Content="Preview"
+                          IsChecked="True"
+                          Margin="0,0,18,0"
+                          VerticalAlignment="Center"
+                          Checked="PreviewToggle_Changed"
+                          Unchecked="PreviewToggle_Changed"/>
+
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            MinHeight="52">
+                    <Border x:Name="QualityCard"
+                            BorderBrush="{StaticResource CardBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Width="210"
+                            Height="50"
+                            Padding="10,5"
+                            Margin="0,0,10,0">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <DockPanel x:Name="JpegQualityRow" Width="188">
+                                <TextBlock DockPanel.Dock="Right"
+                                           Width="34"
+                                           TextAlignment="Right"
+                                           VerticalAlignment="Center"
+                                           FontWeight="SemiBold"
+                                           Text="{Binding ElementName=JpegQualitySlider, Path=Value, StringFormat={}{0:0}}"/>
+                                <TextBlock DockPanel.Dock="Top"
+                                           Text="JPEG"
+                                           Style="{StaticResource Hint}"
+                                           Margin="0,0,0,2"/>
+                                <Slider x:Name="JpegQualitySlider"
+                                        Minimum="1" Maximum="100"
+                                        TickFrequency="1"
+                                        IsSnapToTickEnabled="True"
+                                        ValueChanged="RefreshOnSliderChanged"/>
+                            </DockPanel>
+
+                            <DockPanel x:Name="WebPQualityRow" Width="188">
+                                <TextBlock DockPanel.Dock="Right"
+                                           Width="34"
+                                           TextAlignment="Right"
+                                           VerticalAlignment="Center"
+                                           FontWeight="SemiBold"
+                                           Text="{Binding ElementName=WebPQualitySlider, Path=Value, StringFormat={}{0:0}}"/>
+                                <TextBlock DockPanel.Dock="Top"
+                                           Text="WebP"
+                                           Style="{StaticResource Hint}"
+                                           Margin="0,0,0,2"/>
+                                <Slider x:Name="WebPQualitySlider"
+                                        Minimum="1" Maximum="100"
+                                        TickFrequency="1"
+                                        IsSnapToTickEnabled="True"
+                                        ValueChanged="RefreshOnSliderChanged"/>
+                            </DockPanel>
+
+                            <DockPanel x:Name="AvifQualityRow" Width="188">
+                                <TextBlock DockPanel.Dock="Right"
+                                           Width="34"
+                                           TextAlignment="Right"
+                                           VerticalAlignment="Center"
+                                           FontWeight="SemiBold"
+                                           Text="{Binding ElementName=AvifQualitySlider, Path=Value, StringFormat={}{0:0}}"/>
+                                <TextBlock DockPanel.Dock="Top"
+                                           Text="AVIF"
+                                           Style="{StaticResource Hint}"
+                                           Margin="0,0,0,2"/>
+                                <Slider x:Name="AvifQualitySlider"
+                                        Minimum="1" Maximum="100"
+                                        TickFrequency="1"
+                                        IsSnapToTickEnabled="True"
+                                        ValueChanged="RefreshOnSliderChanged"/>
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border x:Name="BackgroundCard"
+                            BorderBrush="{StaticResource CardBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Width="220"
+                            Height="50"
+                            Padding="10,7">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Style="{StaticResource Hint}"
+                                       Text="JPEG background"
+                                       Margin="0,0,8,0"
+                                       VerticalAlignment="Center"/>
+                            <TextBox x:Name="BackgroundBox"
+                                     Width="92"
+                                     Padding="6,3"
+                                     TextChanged="RefreshOnTextChanged"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <Button Style="{StaticResource PrimaryButton}"
+                            Content="Save result"
+                            Click="SaveResult_Click"/>
+                    <Button x:Name="SaveDropButton"
+                            Style="{StaticResource FlatButton}"
+                            Width="34"
+                            Padding="0"
+                            Margin="4,0,0,0"
+                            Click="SaveDropButton_Click">
+                        <Button.Content>
+                            <TextBlock FontFamily="Segoe MDL2 Assets"
+                                       FontSize="12"
+                                       Text="&#xE70D;"/>
+                        </Button.Content>
+                        <Button.ContextMenu>
+                            <ContextMenu x:Name="SaveDropMenu">
+                                <MenuItem Header="Save result" Click="SaveResult_Click"/>
+                                <MenuItem Header="Save as..." Click="SaveAsResult_Click"/>
+                            </ContextMenu>
+                        </Button.ContextMenu>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="4" Height="28" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="0,1,0,0" Background="#F9FAFB">
+            <StatusBar Background="Transparent" VerticalAlignment="Stretch">
+                <StatusBarItem Width="260" Padding="4,0" HorizontalContentAlignment="Left">
+                    <TextBlock x:Name="StatusText" Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis"/>
+                </StatusBarItem>
+                <Separator/>
+                <StatusBarItem Width="170">
+                    <TextBlock x:Name="SourceInfoText" TextTrimming="CharacterEllipsis"/>
+                </StatusBarItem>
+                <Separator/>
+                <StatusBarItem Width="170">
+                    <TextBlock x:Name="ResultInfoText" TextTrimming="CharacterEllipsis"/>
+                </StatusBarItem>
+                <Separator/>
+                <StatusBarItem>
+                    <TextBlock x:Name="OutputNameText" TextTrimming="CharacterEllipsis"/>
+                </StatusBarItem>
+            </StatusBar>
+        </Border>
+    </Grid>
+</Window>
