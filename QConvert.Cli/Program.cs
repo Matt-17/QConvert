@@ -138,12 +138,12 @@ internal static class Program
             throw new DirectoryNotFoundException($"Folder not found: {fullFolderPath}");
         }
 
-        if (!Clipboard.ContainsImage())
+        if (!ClipboardImage.IsAvailable())
         {
             throw new UserMessageException("No image data in clipboard.");
         }
 
-        var image = Clipboard.GetImage();
+        var image = ClipboardImage.Read();
         if (image is null)
         {
             throw new UserMessageException("Clipboard image could not be read.");
@@ -151,6 +151,10 @@ internal static class Program
 
         var outputPath = ImageConverter.GetClipboardOutputPath(fullFolderPath, target);
         ImageConverter.SaveBitmap(image, outputPath, target, jpegQuality, settings, overwrite: false);
+
+        // Surface the new file in Explorer with its name in inline-rename mode so the
+        // user can immediately type a proper name instead of the auto timestamp.
+        ExplorerRename.SelectForRename(outputPath);
     }
 
     private static void ShowError(string message) =>

@@ -46,6 +46,29 @@
 
   <ItemGroup>
     <ProjectReference Include="..\QConvert.Core\QConvert.Core.csproj" />
+    <!-- Build the CLI alongside the GUI (its output is not referenced for compilation,
+         we only need it copied next to QConvert.exe). The context menu launches
+         QConvert.Cli.exe from the GUI's folder, so dev builds must mirror the installed
+         layout where both executables live side by side. -->
+    <ProjectReference Include="..\QConvert.Cli\QConvert.Cli.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>false</Private>
+    </ProjectReference>
   </ItemGroup>
+
+  <!-- Copy the CLI-specific outputs into the GUI output folder. Shared dependencies
+       (QConvert.Core.dll, SkiaSharp, etc.) are already emitted here via the Core
+       reference, so only the CLI's own files are needed. -->
+  <Target Name="CopyCliToOutput" AfterTargets="Build">
+    <ItemGroup>
+      <_CliOutput Include="..\QConvert.Cli\bin\$(Configuration)\$(TargetFramework)\QConvert.Cli.exe" />
+      <_CliOutput Include="..\QConvert.Cli\bin\$(Configuration)\$(TargetFramework)\QConvert.Cli.dll" />
+      <_CliOutput Include="..\QConvert.Cli\bin\$(Configuration)\$(TargetFramework)\QConvert.Cli.deps.json" />
+      <_CliOutput Include="..\QConvert.Cli\bin\$(Configuration)\$(TargetFramework)\QConvert.Cli.runtimeconfig.json" />
+      <_CliOutput Include="..\QConvert.Cli\bin\$(Configuration)\$(TargetFramework)\QConvert.Cli.pdb" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_CliOutput)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true"
+          Condition="Exists('%(_CliOutput.FullPath)')" />
+  </Target>
 
 </Project>

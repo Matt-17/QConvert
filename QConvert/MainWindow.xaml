@@ -504,13 +504,13 @@
                                 <Border Style="{StaticResource ToggleRow}">
                                     <DockPanel>
                                         <ToggleButton x:Name="PastePngToggle" DockPanel.Dock="Right" Style="{StaticResource SwitchToggle}"/>
-                                        <TextBlock Style="{StaticResource ToggleRowLabel}" Text="Paste clipboard as PNG"/>
+                                        <TextBlock Style="{StaticResource ToggleRowLabel}" Text="Paste image as PNG"/>
                                     </DockPanel>
                                 </Border>
                                 <Border Style="{StaticResource ToggleRow}" BorderThickness="0">
                                     <DockPanel>
                                         <ToggleButton x:Name="PasteJpgToggle" DockPanel.Dock="Right" Style="{StaticResource SwitchToggle}"/>
-                                        <TextBlock Style="{StaticResource ToggleRowLabel}" Text="Paste clipboard as JPG"/>
+                                        <TextBlock Style="{StaticResource ToggleRowLabel}" Text="Paste image as JPG"/>
                                     </DockPanel>
                                 </Border>
                             </StackPanel>

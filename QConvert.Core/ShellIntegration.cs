@@ -158,12 +158,12 @@ namespace QConvert.Core
         {
             if (settings.EnablePastePng)
             {
-                yield return new MenuEntry("Paste clipboard as PNG", "--paste png", 0);
+                yield return new MenuEntry("Paste image as PNG", "--paste png", 0);
             }
 
             if (settings.EnablePasteJpg)
             {
-                yield return new MenuEntry("Paste clipboard as JPG", "--paste jpg", 0);
+                yield return new MenuEntry("Paste image as JPG", "--paste jpg", 0);
             }
         }
 

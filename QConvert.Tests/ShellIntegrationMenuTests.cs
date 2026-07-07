@@ -96,14 +96,14 @@ namespace QConvert.Tests
         {
             var both = ShellIntegration.FolderMenuEntries(new AppSettings()).Select(e => e.Label).ToList();
             CollectionAssert.AreEqual(
-                new[] { "Paste clipboard as PNG", "Paste clipboard as JPG" }, both);
+                new[] { "Paste image as PNG", "Paste image as JPG" }, both);
 
             var none = new AppSettings { EnablePastePng = false, EnablePasteJpg = false };
             Assert.AreEqual(0, ShellIntegration.FolderMenuEntries(none).Count());
 
             var pngOnly = new AppSettings { EnablePasteJpg = false };
             CollectionAssert.AreEqual(
-                new[] { "Paste clipboard as PNG" },
+                new[] { "Paste image as PNG" },
                 ShellIntegration.FolderMenuEntries(pngOnly).Select(e => e.Label).ToList());
         }
     }
