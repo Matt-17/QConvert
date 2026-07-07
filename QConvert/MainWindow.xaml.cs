@@ -814,7 +814,7 @@ namespace QConvert
                 return;
             }
 
-            var image = Clipboard.GetImage();
+            var image = GetClipboardImage();
             if (image is null)
             {
                 StatusText.Text = "Clipboard image could not be read.";
@@ -846,6 +846,55 @@ namespace QConvert
             catch (Exception ex)
             {
                 StatusText.Text = $"Clipboard save failed: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// Reads an image from the clipboard robustly. WPF's <see cref="Clipboard.GetImage"/>
+        /// returns an InteropBitmap over the raw DIB and frequently loses the alpha channel,
+        /// producing an all-transparent ("empty") image for pasted PNGs. We therefore prefer
+        /// the real "PNG" clipboard format and only fall back to GetImage as a last resort.
+        /// </summary>
+        private static System.Windows.Media.Imaging.BitmapSource? GetClipboardImage()
+        {
+            // 1. Preferred: apps (browsers, screenshot tools) often place the original
+            //    PNG bytes on the clipboard. Decode them directly so alpha is preserved.
+            foreach (var format in new[] { "PNG", "image/png" })
+            {
+                try
+                {
+                    if (Clipboard.ContainsData(format) &&
+                        Clipboard.GetData(format) is System.IO.MemoryStream stream &&
+                        stream.Length > 0)
+                    {
+                        stream.Position = 0;
+                        var decoder = System.Windows.Media.Imaging.BitmapDecoder.Create(
+                            stream,
+                            System.Windows.Media.Imaging.BitmapCreateOptions.PreservePixelFormat,
+                            System.Windows.Media.Imaging.BitmapCacheOption.OnLoad);
+                        if (decoder.Frames.Count > 0)
+                        {
+                            var frame = decoder.Frames[0];
+                            frame.Freeze();
+                            return frame;
+                        }
+                    }
+                }
+                catch
+                {
+                    // Ignore and try the next strategy.
+                }
+            }
+
+            // 2. Fall back to the standard (lossy) accessor for sources that only
+            //    provide a DIB/bitmap without transparency.
+            try
+            {
+                return Clipboard.GetImage();
+            }
+            catch
+            {
+                return null;
             }
         }
 

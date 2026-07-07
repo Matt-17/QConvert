@@ -377,8 +377,8 @@ namespace QConvert.Tests
             File.WriteAllText(first, "");
             var second = Core.ImageConverter.GetClipboardOutputPath(_dir, ConversionTarget.Png, timestamp);
 
-            Assert.AreEqual(Path.Combine(_dir, "clipboard-2026-06-12T14-30-22.png"), first);
-            Assert.AreEqual(Path.Combine(_dir, "clipboard-2026-06-12T14-30-22.001.png"), second);
+            Assert.AreEqual(Path.Combine(_dir, "2026-06-12T14-30-22.png"), first);
+            Assert.AreEqual(Path.Combine(_dir, "2026-06-12T14-30-22.001.png"), second);
         }
 
         private string CreateBigPng(string name, int width, int height)

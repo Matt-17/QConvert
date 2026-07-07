@@ -11,3 +11,5 @@ publish/
 
 # Test results
 TestResults/
+
+artifacts/

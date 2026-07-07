@@ -369,7 +369,7 @@ namespace QConvert.Core
 
             var directory = Path.GetFullPath(folderPath);
             var stamp = (timestamp ?? DateTime.Now).ToString("yyyy-MM-ddTHH-mm-ss");
-            return GetUniqueFilePath(directory, $"clipboard-{stamp}{target.FileExtension()}");
+            return GetUniqueFilePath(directory, $"{stamp}{target.FileExtension()}");
         }
 
         private static string GetUniqueFilePath(string directory, string fileName)
