@@ -15,7 +15,7 @@ jobs:
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
       DOTNET_NOLOGO: "1"
-      WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+      WINGET_CREATE_GITHUB_TOKEN: ${{ secrets.WINGET_TOKEN }}
 
     steps:
       - name: Check out repository
@@ -92,12 +92,39 @@ jobs:
           name: ${{ github.ref_name }}
           files: ${{ steps.collect_msi.outputs.path }}
 
-      - name: Submit or update Winget package
-        if: ${{ env.WINGET_TOKEN != '' }}
-        uses: vedantmgoyal2009/winget-releaser@v2
+      - name: Check Winget package registration
+        id: winget_package
+        if: ${{ env.WINGET_CREATE_GITHUB_TOKEN != '' }}
+        shell: pwsh
+        run: |
+          $packageId = "Code-iX.QConvert"
+          $packagePath = "manifests/$($packageId.ToLowerInvariant()[0])/$($packageId.Replace('.', '/'))"
+          $url = "https://github.com/microsoft/winget-pkgs/tree/master/$packagePath"
+          try {
+            Invoke-WebRequest -Uri $url -Method Head -UseBasicParsing -ErrorAction Stop | Out-Null
+            echo "exists=true" >> $env:GITHUB_OUTPUT
+          }
+          catch {
+            Write-Warning "$packageId is not in winget-pkgs yet. Submit the first version manually with wingetcreate; automated updates will run after it is merged."
+            echo "exists=false" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: Set up .NET 6 for WingetCreate
+        if: ${{ env.WINGET_CREATE_GITHUB_TOKEN != '' && steps.winget_package.outputs.exists == 'true' }}
+        uses: actions/setup-dotnet@v5
         with:
-          identifier: Code-iX.QConvert
-          installers-regex: '^QConvert-\d+\.\d+\.\d+-x64\.msi$'
-          release-tag: ${{ github.ref_name }}
-          package-version: ${{ steps.resolve_version.outputs.version }}
-          token: ${{ env.WINGET_TOKEN }}
+          dotnet-version: 6.0.x
+
+      - name: Download WingetCreate
+        if: ${{ env.WINGET_CREATE_GITHUB_TOKEN != '' && steps.winget_package.outputs.exists == 'true' }}
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://aka.ms/wingetcreate/latest" -OutFile "wingetcreate.exe"
+
+      - name: Submit Winget package update
+        if: ${{ env.WINGET_CREATE_GITHUB_TOKEN != '' && steps.winget_package.outputs.exists == 'true' }}
+        shell: pwsh
+        run: |
+          $version = "${{ steps.resolve_version.outputs.version }}"
+          $installerUrl = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/QConvert-$version-x64.msi|x64|machine"
+          .\wingetcreate.exe update Code-iX.QConvert --urls $installerUrl --version $version --submit --no-open --prtitle "Update Code-iX.QConvert to $version"
